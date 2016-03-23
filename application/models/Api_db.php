@@ -278,6 +278,10 @@ Class Api_db extends CI_MODEL
         $this->db->select('palette.colorA1, palette.colorA2, palette.colorA3');
         $this->db->select('xref_user_commerce.points as points');
         $this->db->select('xref_user_commerce_fav.idCommerce as fav');
+        $this->db->select('(select count(*) from reward where reward.idCommerce = commerce.id and reward.points <= xref_user_commerce.points) as avaliable', false);
+        $this->db->select('(select count(*) from reward where reward.idCommerce = commerce.id) as rewards', false);
+        $this->db->select('(select count(*) from log_user_checkin where log_user_checkin.idUser = xref_user_commerce.idUser and log_user_checkin.idCommerce = commerce.id) as visits', false);
+        $this->db->select('(select max(dateAction) from log_user_checkin where log_user_checkin.idUser = xref_user_commerce.idUser and log_user_checkin.idCommerce = commerce.id) as lastVisit', false);
         $this->db->from('commerce');
         $this->db->join('palette', 'commerce.idPalette = palette.id ');
         $this->db->join('xref_user_commerce', 'commerce.id = xref_user_commerce.idCommerce  and xref_user_commerce.idUser = '.$idUser, 'left');
@@ -320,7 +324,7 @@ Class Api_db extends CI_MODEL
         $this->db->join('commerce', 'reward.idCommerce = commerce.id ');
         $this->db->where('reward.status = 1');
         $this->db->where('commerce.status = 1');
-        $this->db->order_by("xref_user_wallet.dateReden", "desc");
+        $this->db->order_by("xref_user_wallet.status, xref_user_wallet.dateReden", "asc");
         return  $this->db->get()->result();
 	}
 
@@ -337,6 +341,7 @@ Class Api_db extends CI_MODEL
         $this->db->join('user', 'message.fromUser = user.id', 'left');
         $this->db->join('reward', 'message.idReward = reward.id', 'left');
         $this->db->where('message.status > 0');
+        $this->db->where('message.idUser', $idUser);
         $this->db->order_by("message.status", "asc");
         $this->db->order_by("message.dateIncome", "desc");
         return  $this->db->get()->result();
@@ -434,8 +439,10 @@ Class Api_db extends CI_MODEL
     
     // obtiene el usuario
 	public function getUserFbid($fbid){
+        $this->db->select('*', false);
+        $this->db->select('(select count(*) from xref_user_commerce where xref_user_commerce.idUser = user.id) as totalCom', false);
         $this->db->from('user');
-        $this->db->where('fbid', $fbid);
+        $this->db->where('user.fbid', $fbid);
         return  $this->db->get()->result();
 	}
     

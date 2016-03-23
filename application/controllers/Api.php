@@ -107,10 +107,36 @@ class Api extends REST_Controller {
      */
     public function setCommerceJoin_get(){
         // Join user to commerce and log it
-        $this->Api_db->insertUserCommerce(array( 'idUser' => $this->get('idUser'),  'idCommerce' => $this->get('idCommerce'), 'points' => '0' ));
-        $this->Api_db->logNewUserCom(array( 'idUser' => $this->get('idUser'), 'idCommerce' => $this->get('idCommerce') ));
+        $isNew = false;
+        $userCommerce = $this->Api_db->getUserCommerce($this->get('idUser'), $this->get('idCommerce'));
+        if (count($userCommerce) == 0){
+            $isNew = true;
+            $this->Api_db->insertUserCommerce(array( 'idUser' => $this->get('idUser'),  'idCommerce' => $this->get('idCommerce'), 'points' => '0' ));
+            $this->Api_db->logNewUserCom(array( 'idUser' => $this->get('idUser'), 'idCommerce' => $this->get('idCommerce') ));
+        }
         // Retrive message
-        $message = array('success' => true);
+        $message = array('success' => $isNew);
+        $this->response($message, 200);
+    }
+    
+    /**
+     * Afiliamos un usuario a un comercio
+     */
+    public function multipleJoin_get(){
+        // Join user to commerce and log it
+        $idComms = explode("-", $this->get('idComms'));
+        foreach ($idComms as $idComm):
+            $userCommerce = $this->Api_db->getUserCommerce($this->get('idUser'), $idComm);
+            if (count($userCommerce) == 0){
+                $isNew = true;
+                $this->Api_db->insertUserCommerce(array( 'idUser' => $this->get('idUser'),  'idCommerce' => $idComm, 'points' => '0' ));
+                $this->Api_db->logNewUserCom(array( 'idUser' => $this->get('idUser'), 'idCommerce' => $idComm ));
+            }
+        endforeach;
+        
+        
+        // Retrive message
+        $message = array('success' => 1);
         $this->response($message, 200);
     }
 
@@ -254,6 +280,15 @@ class Api extends REST_Controller {
         array_push($items, array('image' => $items[0]->banner));
         $rewards = $this->Api_db->getRewardsByCommerce($this->get('idUser'), $this->get('idCommerce'));
         $photos = $this->Api_db->getCommercePhotos($this->get('idCommerce'));
+        
+        // Formatos fecha
+        $months = array('', 'Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic');
+        foreach ($items as $item):
+            if (isset($item->lastVisit)) {
+                $item->lastVisit = date('d', strtotime($item->lastVisit)) . '/' . $months[date('n', strtotime($item->lastVisit))] . '/' . date('Y', strtotime($item->lastVisit));
+            }
+        endforeach;
+        
         $message = array('success' => true, 'items' => $items, 'rewards' => $rewards, 'photos' => $photos);
         $this->response($message, 200);
     }
@@ -303,7 +338,7 @@ class Api extends REST_Controller {
         $months = array('', 'Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre');
         foreach ($items as $item):
             $item->fecha = date('d', strtotime($item->dateIncome)) . ' de ' . $months[date('n', strtotime($item->dateIncome))] . ' del ' . date('Y', strtotime($item->dateIncome));
-            $item->from = "Equipo de Unify";
+            $item->from = "Equipo de Tuki";
             if ($item->user){ $item->from = $item->user; }
             if ($item->commerce){ $item->from = $item->commerce; }
         endforeach;
@@ -322,7 +357,7 @@ class Api extends REST_Controller {
         $months = array('', 'Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre');
         foreach ($items as $item):
             $item->fecha = date('d', strtotime($item->dateIncome)) . ' de ' . $months[date('n', strtotime($item->dateIncome))] . ' del ' . date('Y', strtotime($item->dateIncome));
-            $item->from = "Equipo de Unify";
+            $item->from = "Equipo de Tuki";
             if ($item->user){ $item->from = $item->user; }
             if ($item->commerce){ $item->from = $item->commerce; }
         endforeach;
