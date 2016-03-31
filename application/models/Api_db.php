@@ -408,7 +408,7 @@ Class Api_db extends CI_MODEL
 
   // obtiene el usuario
 	public function getUser($idUser){
-    $this->db->select("*, TIMESTAMPDIFF(hour, lastCheckin, '".date('y-m-d h:i:s')."') as numhours", false);
+    $this->db->select("*, TIMESTAMPDIFF(hour, dateAction, '".date('y-m-d h:i:s')."') as numhours", false);
     $this->db->from('user');
     $this->db->where('user.id = '.$idUser);
     return  $this->db->get()->result();

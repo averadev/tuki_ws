@@ -5,7 +5,7 @@ setlocale(LC_ALL,"es_ES@euro","es_ES","esp");
 require APPPATH.'/libraries/REST_Controller.php';
 require APPPATH.'/libraries/BarcodeQR.php';
 
-class Api extends REST_Controller {
+class Mobile extends REST_Controller {
 
 	public function __construct() {
         parent::__construct();
@@ -427,206 +427,7 @@ class Api extends REST_Controller {
         // Result data
         $this->response($message, 200);
         
-        /*
-        $userEmail = array();
-        if ($this->get('email') != '-'){
-            $userEmail = $this->Api_db->getUserEmail($this->get('email'));
-        }
-        
-        if (count($userFbid) > 0 || count($userEmail) > 0){
-            echo "Exist User";
-        }else{
-            echo "Not Exist";
-        }*/
-        
     }
-    
-
-	/**------------------------------ UNIFY COMMERCE ------------------------------**/
-    
-	/**
-     * Obtiene el usuario
-     */
-    public function getUser_get(){
-        $success = true;
-        // Get User
-        $user = $this->Api_db->getUser($this->get('idUser'));
-        // Insert new user
-        if (count($user) == 0){
-            $this->Api_db->insertUser(array( 'id' => $this->get('idUser'), 'status' => 1 ));
-            $user = $this->Api_db->getUser($this->get('idUser'));
-        }
-        
-        if (count($user) > 0){
-            // Get User Commerce
-            $userCommerce = $this->Api_db->getUserCommerce($this->get('idUser'), $this->get('idCommerce'));
-            if (count($userCommerce) == 0){
-                $this->Api_db->insertUserCommerce(array( 'idUser' => $this->get('idUser'),  'idCommerce' => $this->get('idCommerce'), 'points' => '0' ));
-                $userCommerce = $this->Api_db->getUserCommerce($this->get('idUser'), $this->get('idCommerce'));
-                $this->Api_db->logNewUserCom(array( 'idUser' => $this->get('idUser'), 'idCommerce' => $this->get('idCommerce') ));
-            }
-        }else{
-            $success = false;
-        }
-        
-        // Result data
-        if ($success){
-            $message = array('success' => $success, 'userCommerce' => $userCommerce[0]);
-        }else{
-            $message = array('success' => $success, 'message' => 'Error data.');
-        }
-        $this->response($message, 200);
-    }
-    
-    /**
-     * Actualiza el usuario
-     */
-    public function updateUser_get(){
-        // Update user
-        $name = '';
-        $email = '';
-        if ($this->get('name') != '-'){ $name = $this->get('name'); } 
-        if ($this->get('email') != '-'){ $email = $this->get('email'); } 
-        
-        $this->Api_db->updateUser($this->get('idUser'), array( 'name' => $name, 'email' => $email));
-        
-        // Result data
-        $message = array('success' => true);
-        $this->response($message, 200);
-    }
-
-	/**
-     * Obtiene las recompensas
-     */
-    public function doCheckIn_get(){
-        $isPoints = true;
-        // Get User
-        $isUser = $this->Api_db->getUser($this->get('idUser'));
-        // Insert new user
-        if (count($isUser) == 0){
-            $this->Api_db->insertUser(array( 'id' => $this->get('idUser'), 'status' => 1 ));
-            $this->Api_db->logNewUserCom(array( 'idUser' => $this->get('idUser'), 'idCommerce' => $this->get('idCommerce') ));
-        }else{
-            $isUser = $isUser[0];
-            if ($isUser->numhours == null || $isUser->numhours > 6){
-                $this->Api_db->updateUserLastCheckin($this->get('idUser'), array( 'lastCheckin' => date('y-m-d h:i:s') ));
-                $this->Api_db->logCheckin(array( 'idUser' => $this->get('idUser'), 'points' => 10, 'idCommerce' => $this->get('idCommerce') ));
-            }else{
-                $isPoints = false;
-            }
-        }
-        
-        // Get data
-        $user = $this->Api_db->getUserPoints($this->get('idUser'), $this->get('idCommerce'));
-        $rewards = $this->Api_db->getComRewards($this->get('idCommerce'));
-        
-        if ($user){
-            $user = $user[0];
-            $user->newPoints = true;
-            if ($user->idCommerce){
-                if ($isPoints){
-                    $user->points = $user->points + 10;
-                }
-            }else{
-                $user->points = 10;
-                $this->Api_db->insertUserPoints(array( 'idUser' => $this->get('idUser'), 'idCommerce' => $this->get('idCommerce'), 'points' => 10));
-                $this->Api_db->logCheckin(array( 'idUser' => $this->get('idUser'), 'points' => 10, 'idCommerce' => $this->get('idCommerce') ));
-            }
-        }
-        
-        // Reward available
-        foreach ($rewards as $item): 
-            $item->available = false;
-			if( intval($item->points) <= intval($user->points)){
-				$item->available = true;
-			}
-        endforeach; 
-
-        // Update points
-        if ($isPoints){
-            $this->Api_db->setUserPoints($this->get('idUser'), $this->get('idCommerce'), array('points' => $user->points));
-        }
-        
-        // Result data
-        $message = array('success' => true, 'isPoints' => $isPoints, 'user' => $user, 'rewards' => $rewards);
-        $this->response($message, 200);
-    }
-    
-    /**
-     * Obtiene el cashier
-     */
-    public function getCashier_get(){
-        // Get User
-        $user = $this->Api_db->getCashier($this->get('idCashier'), $this->get('idCommerce'));
-                                   
-        // Result data
-        if (count($user) == 0){
-            $user = $this->Api_db->getUserPoints($this->get('idCashier'), $this->get('idCommerce'));
-            if (count($user) == 0){
-                $this->response(array('success' => false), 200);
-            }else{
-                $user = $user[0];
-                $this->response(array('success' => true, 'isCashier' => false, 'user' => $user), 200);
-            }
-        }else{
-            // Obtenemos los ultimos rewards canjeados
-            $user = $user[0];
-            $redemptions = $this->Api_db->getRedemRewards($this->get('idCommerce'));
-            // Fecha Vigencia
-            $months = array('', 'Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre');
-            foreach ($redemptions as $item):
-                $item->dateTexto = date('d', strtotime($item->dateChange)) . ' de ' . 
-                    $months[date('n', strtotime($item->dateChange))];
-            endforeach;
-            $this->response(array('success' => true, 'isCashier' => true, 'user' => $user, 'redemptions' => $redemptions), 200);
-        }
-    }
-    
-    /**
-     * Inserta / Actualiza una compra
-     */
-    public function insertRedemption_get(){
-        
-        if ($this->get('status') == '1'){
-            // Get points
-            $user = $this->Api_db->getUserPoints($this->get('idUser'), $this->get('idCommerce'));
-            $points = $user[0]->points - intval($this->get('points'));
-            // Update points
-            $this->Api_db->setUserPoints($this->get('idUser'), $this->get('idCommerce'), array('points' => $points));
-            
-            // Insert data
-            $user = $this->Api_db->insertRedemption(array(
-                'idUser' => $this->get('idUser'),
-                'idReward' => $this->get('idReward'),
-                'idCommerce' => $this->get('idCommerce'),
-                'idCashier' => 1,
-                'dateChange' => date('y-m-d h:i:s'),
-                'points' => 10,
-                'status' => 1));
-        }
-        $this->response(array('success' => true), 200);
-    }
-    
-    /**
-     * Inserta / Actualiza una compra
-     */
-    public function updateRedemption_get(){
-        // Actualiza info
-        if ($this->get('status') == "2"){
-            $this->Api_db->updateRedemption($this->get('idRedemption'), array( 'status' => 2, 'dateRedemption' => date('y-m-d h:i:s')));
-        }else{
-            $this->Api_db->updateRedemption($this->get('idRedemption'), array( 'status' => 3, 'dateCancelation' => date('y-m-d h:i:s')));
-            // Get points
-            $reden = $this->Api_db->getRedemption($this->get('idRedemption'));
-            $user = $this->Api_db->getUserPoints($reden[0]->idUser, $reden[0]->idCommerce);
-            $points = $user[0]->points + intval($this->get('points'));
-            // Update points
-            $this->Api_db->setUserPoints($reden[0]->idUser, $reden[0]->idCommerce, array('points' => $points));
-        }
-        
-        $this->response(array('success' => true), 200);
-    }
-
 
     /**------------------------------ COMUNES ------------------------------**/
 
@@ -651,3 +452,23 @@ class Api extends REST_Controller {
                 substr($an, rand(0, $su), 1);
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
