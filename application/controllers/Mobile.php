@@ -62,23 +62,65 @@ class Mobile extends REST_Controller {
     /**------------------------------ USER ------------------------------**/
     
     /**
+     * Crea usuario por APP
+     */
+    public function createUser_get(){
+        // Get User
+        $message = array('success' => false);
+        $user = $this->Api_db->getUserEmail($this->get('email'));
+        if (count($user) == 0){
+             $user = $this->Api_db->createUser($this->getRandomCode(), array(
+                'id' => '', 
+                'fbid' => '', 
+                'name' => '', 
+                'email' => $this->get('email'), 
+                'password' => md5($this->get('password')), 
+                'idCity' => 1,
+                'status' => 1
+            ));
+            $user = $this->Api_db->getUserEmail($this->get('email'));
+            $message = array('success' => true, 'user' => $user[0]);
+        }
+        // Retrive message
+        
+        $this->response($message, 200);
+    }
+    
+    /**
      * Crea usuario por APP FB
      */
     public function createUserFB_get(){
         // Get User
         $user = $this->Api_db->getUserFbid($this->get('fbid'));
         if (count($user) == 0){
-             $user = $this->Api_db->createUserFB($this->getRandomCode(), array(
+             $user = $this->Api_db->createUser($this->getRandomCode(), array(
                 'id' => '', 
                 'fbid' => $this->get('fbid'), 
                 'name' => $this->get('name'), 
-                'email' => $this->get('email')
+                'email' => $this->get('email'), 
+                'idCity' => 1,
+                'status' => 1
             ));
             $user = $this->Api_db->getUserFbid($this->get('fbid'));
             
         }
         // Retrive message
         $message = array('success' => true, 'user' => $user[0]);
+        $this->response($message, 200);
+    }
+    
+    /**
+     * Valida usuario
+     */
+    public function validateUser_get(){
+        // Get User
+        $message = array('success' => false);
+        $user = $this->Api_db->getUserEmailPass($this->get('email'), md5($this->get('password')));
+        if (count($user) > 0){
+            $message = array('success' => true, 'user' => $user[0]);
+        }
+        // Retrive message
+        
         $this->response($message, 200);
     }
     

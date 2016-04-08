@@ -35,7 +35,7 @@ Class Api_db extends CI_MODEL
     /**------------------------------ USER ------------------------------**/
     
     // registra el usuario
-	public function createUserFB($randomC, $data){
+	public function createUser($randomC, $data){
         $this->db->select('(max(id)+1000) as maxId');
         $this->db->from('user');
         $max = $this->db->get()->result()[0]->maxId;
@@ -450,6 +450,16 @@ Class Api_db extends CI_MODEL
 	public function getUserEmail($email){
         $this->db->from('user');
         $this->db->where('email', $email);
+        return  $this->db->get()->result();
+	}
+    
+    // obtiene el usuario
+	public function getUserEmailPass($email, $pass){
+        $this->db->select('*', false);
+        $this->db->select('(select count(*) from xref_user_commerce where xref_user_commerce.idUser = user.id) as totalCom', false);
+        $this->db->from('user');
+        $this->db->where('email', $email);
+        $this->db->where('password', $pass);
         return  $this->db->get()->result();
 	}
 
