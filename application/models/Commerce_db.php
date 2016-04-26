@@ -134,6 +134,79 @@ Class Commerce_db extends CI_MODEL
         $this->db->where('id', $id);
         return  $this->db->get()->result();
 	}
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    /**------------------------------ APP COMMERCE ------------------------------**/
+    
+    // obtiene el reward
+	public function getReward($idReward){
+        $this->db->select('reward.id, reward.name, reward.description, reward.image, reward.points');
+        $this->db->from('reward');
+        $this->db->where('reward.id', $idReward);
+        return  $this->db->get()->result();
+	}
+    
+    
+    // obtiene los rewards
+	public function getRewards($idCommerce){
+        $this->db->select('reward.id, reward.name, reward.description, reward.image, reward.points');
+        $this->db->from('reward');
+        $this->db->where('reward.idCommerce = '.$idCommerce);
+        $this->db->where('reward.status = 1');
+        $this->db->order_by('reward.points',"ASC");
+        return  $this->db->get()->result();
+	}
+    
+    
+    // obtiene el usuario
+	public function isCashier($idUser, $idCommerce){
+        $this->db->select('id, name');
+        $this->db->from('cashier');
+        $this->db->where('id = '.$idUser);
+        $this->db->where('idCommerce = '.$idCommerce);
+        return  $this->db->get()->result();
+	}
+    
+    // obtiene el usuario
+	public function isUser($idUser){
+        $this->db->select('id, name');
+        $this->db->from('user');
+        $this->db->where('user.id = '.$idUser);
+        return  $this->db->get()->result();
+	}
+    
+    // obtiene el usuario
+	public function isUserCommerce($idUser, $idCommerce){
+        $this->db->select('xref_user_commerce.idUser, xref_user_commerce.points');
+        $this->db->select("TIMESTAMPDIFF(hour, (select max(log_user_checkin.dateAction) from  log_user_checkin where log_user_checkin.idUser = xref_user_commerce.idUser and log_user_checkin.idCommerce = xref_user_commerce.idCommerce ), now()) as numhours", false);
+        $this->db->from('xref_user_commerce');
+        $this->db->where('idUser', $idUser);
+        $this->db->where('idCommerce', $idCommerce);
+        return  $this->db->get()->result();
+	}
+
+    // obtiene el usuario por usario
+	public function userPoints($idUser, $idCommerce){
+        $this->db->select('user.id, user.name, xref_user_commerce.points');
+        $this->db->from('user');
+        $this->db->join('xref_user_commerce', 'xref_user_commerce.idUser = user.id and xref_user_commerce.idCommerce = '.$idCommerce);
+        $this->db->where('user.id = '.$idUser);
+        return  $this->db->get()->result();
+	}
 
 }
 //end model

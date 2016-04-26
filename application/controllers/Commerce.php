@@ -55,6 +55,26 @@ class Commerce extends REST_Controller {
         $message = array('success' => true);
         $this->response($message, 200);
     }
+    
+    /**
+     * Inserta / Actualiza una compra
+     */
+    public function updateRedemption_get(){
+        // Actualiza info
+        if ($this->get('status') == "2"){
+            $this->Commerce_db->updateRedemption($this->get('idRedemption'), array( 'status' => 2, 'dateRedemption' => date('y-m-d h:i:s')));
+        }else{
+            $this->Commerce_db->updateRedemption($this->get('idRedemption'), array( 'status' => 3, 'dateCancelation' => date('y-m-d h:i:s')));
+            // Get points
+            $reden = $this->Commerce_db->getRedemption($this->get('idRedemption'));
+            $user = $this->Commerce_db->getUserPoints($reden[0]->idUser, $reden[0]->idCommerce);
+            $points = $user[0]->points + intval($this->get('points'));
+            // Update points
+            $this->Commerce_db->setUserPoints($reden[0]->idUser, $reden[0]->idCommerce, array('points' => $points));
+        }
+        
+        $this->response(array('success' => true), 200);
+    }
 
 	/**
      * Obtiene las recompensas
@@ -137,6 +157,108 @@ class Commerce extends REST_Controller {
         }
     }
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    /**------------------------------ APP COMMERCE ------------------------------**/
+    
+	/**
+     * Obtiene las recompensas
+     */
+    public function getRewards_get(){
+        $rewards = $this->Commerce_db->getRewards($this->get('idCommerce'));
+        $this->response(array('success' => true, 'items' => $rewards), 200);
+    }
+    
+	/**
+     * Obtiene las recompensas
+     */
+    public function getRedenciones_get(){
+        $redemptions = $this->Commerce_db->getRedemRewards($this->get('idCommerce'));
+        // Fecha Vigencia
+        $months = array('', 'Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre');
+        foreach ($redemptions as $item):
+            $item->dateTexto = date('d', strtotime($item->dateChange)) . ' de ' . 
+                $months[date('n', strtotime($item->dateChange))].' '.date('h:i', strtotime($item->dateChange));
+        endforeach;
+        $this->response(array('success' => true, 'items' => $redemptions), 200);
+    }
+    
+    /**
+     * Validamos QR
+     */
+    public function validateQR_get(){
+        $response = array();
+        $newPoints = 0;
+        
+        // Validar Cajero
+        $user = $this->Commerce_db->isCashier($this->get('qr'), $this->get('idCommerce'));
+        if (count($user) >0){
+            $response = $this->response(array('success' => true, 'cashier' => $user[0]), 200);
+        }else{
+            // Validar Usuario
+            $user = $this->Commerce_db->isUser($this->get('qr'), $this->get('idCommerce'));
+            if (count($user) == 0){
+                $this->Commerce_db->insertUser(array( 'id' => $this->get('qr'), 'idCity' => 1, 'status' => 1 ));
+                $user = $this->Commerce_db->isUser($this->get('qr'), $this->get('idCommerce'));
+            }
+            
+            // Validar Usuario-Commercio
+            $user = $this->Commerce_db->isUserCommerce($this->get('qr'), $this->get('idCommerce'));
+            if (count($user) == 0){
+                $newPoints = 10;
+                $this->Commerce_db->insertUserCommerce(array( 'idUser' => $this->get('qr'),  'idCommerce' => $this->get('idCommerce'), 'points' => '10' ));
+                $this->Commerce_db->setUserPoints($this->get('qr'), $this->get('idCommerce'), array('points' => 10));
+                $this->Commerce_db->logNewUserCom(array( 'idUser' => $this->get('qr'), 'idCommerce' => $this->get('idCommerce') ));
+                $this->Commerce_db->logCheckin(array( 'idUser' => $this->get('qr'), 'points' => 10, 'idCommerce' => $this->get('idCommerce') ));
+            }else{
+                $user = $user[0];
+                if ($user->numhours >= 6){
+                    $newPoints = 10;
+                    $user->points = $user->points + 10;
+                    $this->Commerce_db->setUserPoints($this->get('qr'), $this->get('idCommerce'), array('points' => $user->points));
+                    $this->Commerce_db->logCheckin(array( 'idUser' => $this->get('qr'), 'points' => 10, 'idCommerce' => $this->get('idCommerce') ));
+                }
+            }
+            
+            // Obtener Usuario-Commercio
+            $user = $this->Commerce_db->userPoints($this->get('qr'), $this->get('idCommerce'));
+            $user[0]->newPoints = $newPoints;
+            $response = $this->response(array('success' => true, 'user' => $user[0]), 200);
+        }
+        
+        $this->response($response, 200);
+    }
+    
+    
+    
+    /**
+     * Validamos QR Reward
+     */
+    public function validateQrReward_get(){
+        $response = array('success' => false);
+        if (strrpos($this->get('qr'), '-') > 0){
+            $ids = explode("-", $this->get('qr'));
+            $user = $this->Commerce_db->userPoints($ids[0], $this->get('idCommerce'));
+            $reward = $this->Commerce_db->getReward($ids[1]);
+            if (count($user) > 0 && count($reward) > 0){
+                $response = array('success' => true, 'user' => $user[0], 'reward' => $reward[0]);
+            }
+        }
+                                          
+                                          
+        $this->response($response, 200);
+    }
+    
+    
     /**
      * Inserta / Actualiza una compra
      */
@@ -156,7 +278,7 @@ class Commerce extends REST_Controller {
                 'idCommerce' => $this->get('idCommerce'),
                 'idCashier' => 1,
                 'dateChange' => date('y-m-d h:i:s'),
-                'points' => 10,
+                'points' => intval($this->get('points')),
                 'status' => 1));
         }
         $this->response(array('success' => true), 200);
@@ -165,12 +287,12 @@ class Commerce extends REST_Controller {
     /**
      * Inserta / Actualiza una compra
      */
-    public function updateRedemption_get(){
+    public function setRedemption_get(){
         // Actualiza info
         if ($this->get('status') == "2"){
-            $this->Commerce_db->updateRedemption($this->get('idRedemption'), array( 'status' => 2, 'dateRedemption' => date('y-m-d h:i:s')));
+            $this->Commerce_db->updateRedemption($this->get('idRedemption'), array( 'status' => 2, 'idCashier' => $this->get('idCashier'), 'dateRedemption' => date('y-m-d h:i:s')));
         }else{
-            $this->Commerce_db->updateRedemption($this->get('idRedemption'), array( 'status' => 3, 'dateCancelation' => date('y-m-d h:i:s')));
+            $this->Commerce_db->updateRedemption($this->get('idRedemption'), array( 'status' => 3, 'idCashier' => $this->get('idCashier'), 'dateCancelation' => date('y-m-d h:i:s')));
             // Get points
             $reden = $this->Commerce_db->getRedemption($this->get('idRedemption'));
             $user = $this->Commerce_db->getUserPoints($reden[0]->idUser, $reden[0]->idCommerce);
@@ -181,5 +303,23 @@ class Commerce extends REST_Controller {
         
         $this->response(array('success' => true), 200);
     }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
 }
