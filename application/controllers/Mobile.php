@@ -69,7 +69,8 @@ class Mobile extends REST_Controller {
         $message = array('success' => false);
         $user = $this->Api_db->getUserEmail($this->get('email'));
         if (count($user) == 0){
-             $user = $this->Api_db->createUser($this->getRandomCode(), array(
+            $months = $this->Api_db->getMonths()[0]->months;
+            $user = $this->Api_db->createUser($this->getRandomCode(), $months, array(
                 'id' => '', 
                 'fbid' => '', 
                 'name' => '', 
@@ -93,7 +94,8 @@ class Mobile extends REST_Controller {
         // Get User
         $user = $this->Api_db->getUserFbid($this->get('fbid'));
         if (count($user) == 0){
-             $user = $this->Api_db->createUser($this->getRandomCode(), array(
+            $months = $this->Api_db->getMonths()[0]->months;
+            $user = $this->Api_db->createUser($this->getRandomCode(), $months, array(
                 'id' => '', 
                 'fbid' => $this->get('fbid'), 
                 'name' => $this->get('name'), 
@@ -493,6 +495,29 @@ class Mobile extends REST_Controller {
                 substr($an, rand(0, $su), 1) .
                 substr($an, rand(0, $su), 1);
     }
+    
+    /**
+	 * Generamos numero de meses entre meses
+	 */
+    public function noMonths($date1, $date2)
+    {
+        $begin = new DateTime( $date1 );
+        $end = new DateTime( $date2 );
+        $end = $end->modify( '+1 month' );
+
+        $interval = DateInterval::createFromDateString('1 month');
+
+        $period = new DatePeriod($begin, $interval, $end);
+        $counter = 0;
+        foreach($period as $dt) {
+            $counter++;
+        }
+
+        return $counter;
+    }
+
+
+    
 }
 
 

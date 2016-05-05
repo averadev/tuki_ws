@@ -35,12 +35,20 @@ Class Api_db extends CI_MODEL
     /**------------------------------ USER ------------------------------**/
     
     // registra el usuario
-	public function createUser($randomC, $data){
-        $this->db->select('(max(id)+1000) as maxId');
+	public function createUser($randomC, $months, $data){
+        $lote = (200+$months);
+        $this->db->select('(max(id)+1000000) as maxId');
         $this->db->from('user');
-        $max = $this->db->get()->result()[0]->maxId;
-        $newId = substr(strval($max), 0, -3).$randomC;
-        $data['id'] = $newId;
+        $this->db->where("id like '404%".$lote."___'");
+        $newId = $this->db->get()->result();
+        
+        $max = $newId[0]->maxId;
+        if ($max == ''){
+            $data['id'] = '4040000001'.$lote.$randomC;
+        }else{
+            $data['id'] = substr(strval($max), 0, -3).$randomC;
+        }
+        
         $this->db->insert('user', $data);
         return  1;
 	}
@@ -553,6 +561,14 @@ Class Api_db extends CI_MODEL
         $this->db->where('id', $id);
         return  $this->db->get()->result();
 	}
+    
+    // obtiene los meses
+    public function getMonths(){
+        $this->db->select("period_diff(date_format(now(), '%Y%m'), date_format(date('2016-04-01'), '%Y%m')) as months", false);
+        return  $this->db->get()->result();
+	}
+    
+    
 
 
 }
