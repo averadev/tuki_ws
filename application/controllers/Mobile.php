@@ -472,6 +472,46 @@ class Mobile extends REST_Controller {
         $this->response($message, 200);
         
     }
+    
+    /**
+     * Obtiene el usuario
+     */
+    public function cardLink_get(){
+        $message = array('success' => false);
+        
+        // Validar Id Tarjeta
+        if (((double) $this->get('idCard') < 1000000000000000) or ((double) $this->get('idCard') > 4000000000000000)){
+            $message = array('success' => false, 'message' => "BadIdCard");
+        }else{
+            // Consultar Id's
+            $data = $this->Api_db->getUserCard($this->get('idUser'), $this->get('idCard'));
+            if (count($data) == 0){
+                $data = $this->Api_db->getAccount($this->get('idCard'));
+                if (count($data) == 0){
+                    // La tarjeta es nueva
+                    $message = array('success' => true, 'message' => "NewCard", 'idCard' => $this->get('idCard'));
+                }else{
+                    // Sumamos puntos
+                    $points = $this->Api_db->getCardPoints($this->get('idCard'));
+                    $this->Api_db->assignCardPoints($this->get('idUser'), $points);
+                    $message = array('success' => true, 'points' => $points, 'idCard' => $this->get('idCard'));
+                }
+                $this->Api_db->insertUserCard(array( 'idUser' => $this->get('idUser'), 'idCard' => $this->get('idCard'), 'status' => 1));
+
+            }else{
+                
+                // Se ha realizado una vinculacion previa
+                if ($data[0]->idUser == $this->get('idUser')){
+                    $message = array('success' => false, 'message' => "UserExist");
+                }else{
+                    $message = array('success' => false, 'message' => "CardExist");
+                }
+            }
+        }
+        
+        // Result data
+        $this->response($message, 200);
+    }
 
     /**------------------------------ COMUNES ------------------------------**/
 

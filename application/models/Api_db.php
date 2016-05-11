@@ -74,6 +74,48 @@ Class Api_db extends CI_MODEL
         $this->db->order_by('xref_user_commerce.points',"DESC");
         return  $this->db->get()->result();
 	}
+    
+     /**------------------------------ LINK CARD ------------------------------**/
+    
+    // Verifica si extiste el usuario o tarjeta en la tabla link
+	public function getUserCard($idUser, $idCard){
+		$this->db->from('xref_user_card');
+        $this->db->where('idUser = '.$idUser.' OR idCard = '.$idCard);
+        return  $this->db->get()->result();
+	}
+
+    // Se agrega un link de App Tarjeta
+	public function insertUserCard($data){
+		$this->db->insert('xref_user_card', $data);
+        return  1;
+	}
+
+    // Se obtienen los puntos de una tarjeta
+	public function getCardPoints($idCard){
+		$this->db->from('xref_user_commerce');
+        $this->db->where('idUser = '.$idCard);
+        return  $this->db->get()->result();
+	}
+    
+    // Se agregan los puntos de una tarjeta
+	public function assignCardPoints($idUser, $items){
+        foreach ($items as $item):
+            // Obtenemos el registro
+            $this->db->from('xref_user_commerce');
+            $this->db->where('idUser = '.$idUser);
+            $this->db->where('idCommerce = '.$item->idCommerce);
+            $userCom = $this->db->get()->result();    
+            // Creamos o actualizamos
+            if (count($userCom) == 0){
+                $this->db->insert('xref_user_commerce', array('idUser' => $idUser, 'idCommerce' => $item->idCommerce, 'points' => $item->points));
+            }else{
+                $this->db->where('idUser = '.$idUser);
+                $this->db->where('idCommerce = '.$item->idCommerce);
+                $this->db->update('xref_user_commerce',  array('points' => $userCom[0]->points + $item->points));
+            }
+        endforeach;
+	}
+    
 
     /**------------------------------ REWARDS ------------------------------**/
 
@@ -281,7 +323,7 @@ Class Api_db extends CI_MODEL
 
     // obtiene los comercios destacados
 	public function getCommerce($idUser, $idCommerce){
-        $this->db->select('commerce.id, commerce.name, commerce.description, commerce.address, commerce.lat, commerce.long');
+        $this->db->select('commerce.id, commerce.name, commerce.description, commerce.detail, commerce.address, commerce.lat, commerce.long');
         $this->db->select('commerce.image, commerce.banner, commerce.phone, commerce.web, commerce.facebook, commerce.twitter');
         $this->db->select('palette.colorA1, palette.colorA2, palette.colorA3');
         $this->db->select('xref_user_commerce.points as points');
@@ -449,6 +491,7 @@ Class Api_db extends CI_MODEL
 	public function getUserFbid($fbid){
         $this->db->select('*', false);
         $this->db->select('(select count(*) from xref_user_commerce where xref_user_commerce.idUser = user.id) as totalCom', false);
+        $this->db->select('(select idCard from xref_user_card where xref_user_card.idUser = user.id) as idCard', false);
         $this->db->from('user');
         $this->db->where('user.fbid', $fbid);
         return  $this->db->get()->result();
@@ -465,6 +508,7 @@ Class Api_db extends CI_MODEL
 	public function getUserEmailPass($email, $pass){
         $this->db->select('*', false);
         $this->db->select('(select count(*) from xref_user_commerce where xref_user_commerce.idUser = user.id) as totalCom', false);
+        $this->db->select('(select idCard from xref_user_card where xref_user_card.idUser = user.id) as idCard', false);
         $this->db->from('user');
         $this->db->where('email', $email);
         $this->db->where('password', $pass);

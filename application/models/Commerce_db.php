@@ -207,6 +207,14 @@ Class Commerce_db extends CI_MODEL
         $this->db->where('user.id = '.$idUser);
         return  $this->db->get()->result();
 	}
+    
+    // obtiene el usuario
+	public function isLinkCard($idCard){
+        $this->db->select('idUser');
+        $this->db->from('xref_user_card');
+        $this->db->where('idCard', $idCard);
+        return  $this->db->get()->result();
+	}
 
 }
 //end model
