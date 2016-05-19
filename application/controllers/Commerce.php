@@ -162,13 +162,20 @@ class Commerce extends REST_Controller {
     
     
     
-    
-    
-    
-    
-    
-    
     /**------------------------------ APP COMMERCE ------------------------------**/
+    
+	/**
+     * Obtiene las recompensas
+     */
+    public function verifyPassword_get(){
+        $response = array('success' => false);
+        $branch = $this->Commerce_db->verifyPassword(md5($this->get('password')));
+        if (count($branch) > 0){
+            $response = array('success' => true, 'branch' => $branch );
+        }
+        
+        $this->response($response, 200);
+    }
     
 	/**
      * Obtiene las recompensas
@@ -182,7 +189,7 @@ class Commerce extends REST_Controller {
      * Obtiene las recompensas
      */
     public function getRedenciones_get(){
-        $redemptions = $this->Commerce_db->getRedemRewards($this->get('idCommerce'));
+        $redemptions = $this->Commerce_db->getRedemRewards($this->get('idBranch'));
         // Fecha Vigencia
         $months = array('', 'Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre');
         foreach ($redemptions as $item):
@@ -201,7 +208,7 @@ class Commerce extends REST_Controller {
         $idQR = $this->get('qr');
         
         // Validar Cajero
-        $user = $this->Commerce_db->isCashier($idQR, $this->get('idCommerce'));
+        $user = $this->Commerce_db->isCashier($idQR, $this->get('idBranch'));
         if (count($user) >0){
             $response = $this->response(array('success' => true, 'cashier' => $user[0]), 200);
         }else{
@@ -226,14 +233,14 @@ class Commerce extends REST_Controller {
                 $this->Commerce_db->insertUserCommerce(array( 'idUser' => $idQR,  'idCommerce' => $this->get('idCommerce'), 'points' => '10' ));
                 $this->Commerce_db->setUserPoints($idQR, $this->get('idCommerce'), array('points' => 10));
                 $this->Commerce_db->logNewUserCom(array( 'idUser' => $idQR, 'idCommerce' => $this->get('idCommerce') ));
-                $this->Commerce_db->logCheckin(array( 'idUser' => $idQR, 'points' => 10, 'idCommerce' => $this->get('idCommerce') ));
+                $this->Commerce_db->logCheckin(array( 'idUser' => $idQR, 'points' => 10, 'idBranch' => $this->get('idBranch') ));
             }else{
                 $user = $user[0];
-                if ($user->numhours >= 6){
+                if ($user->numhours == null || $user->numhours >= 6){
                     $newPoints = 10;
                     $user->points = $user->points + 10;
                     $this->Commerce_db->setUserPoints($idQR, $this->get('idCommerce'), array('points' => $user->points));
-                    $this->Commerce_db->logCheckin(array( 'idUser' => $idQR, 'points' => 10, 'idCommerce' => $this->get('idCommerce') ));
+                    $this->Commerce_db->logCheckin(array( 'idUser' => $idQR, 'points' => 10, 'idBranch' => $this->get('idBranch') ));
                 }
             }
             
@@ -283,7 +290,7 @@ class Commerce extends REST_Controller {
             $user = $this->Commerce_db->insertRedemption(array(
                 'idUser' => $this->get('idUser'),
                 'idReward' => $this->get('idReward'),
-                'idCommerce' => $this->get('idCommerce'),
+                'idBranch' => $this->get('idBranch'),
                 'idCashier' => 1,
                 'dateChange' => date('y-m-d h:i:s'),
                 'points' => intval($this->get('points')),
@@ -303,10 +310,10 @@ class Commerce extends REST_Controller {
             $this->Commerce_db->updateRedemption($this->get('idRedemption'), array( 'status' => 3, 'idCashier' => $this->get('idCashier'), 'dateCancelation' => date('y-m-d h:i:s')));
             // Get points
             $reden = $this->Commerce_db->getRedemption($this->get('idRedemption'));
-            $user = $this->Commerce_db->getUserPoints($reden[0]->idUser, $reden[0]->idCommerce);
+            $user = $this->Commerce_db->getUserPoints($reden[0]->idUser, $this->get('idCommerce'));
             $points = $user[0]->points + intval($this->get('points'));
             // Update points
-            $this->Commerce_db->setUserPoints($reden[0]->idUser, $reden[0]->idCommerce, array('points' => $points));
+            $this->Commerce_db->setUserPoints($reden[0]->idUser, $this->get('idCommerce'), array('points' => $points));
         }
         
         $this->response(array('success' => true), 200);

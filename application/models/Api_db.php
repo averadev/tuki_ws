@@ -66,8 +66,8 @@ Class Api_db extends CI_MODEL
         $this->db->select('commerce.id, commerce.name, commerce.description, commerce.image, xref_user_commerce.points');
         $this->db->select('(select count(*) from reward where reward.idCommerce = commerce.id and reward.points <= xref_user_commerce.points) as avaliable', false);
         $this->db->select('(select count(*) from reward where reward.idCommerce = commerce.id) as rewards', false);
-        $this->db->select('(select count(*) from log_user_checkin where log_user_checkin.idUser = xref_user_commerce.idUser and log_user_checkin.idCommerce = commerce.id) as visits', false);
-        $this->db->select('(select max(dateAction) from log_user_checkin where log_user_checkin.idUser = xref_user_commerce.idUser and log_user_checkin.idCommerce = commerce.id) as lastVisit', false);
+        $this->db->select('(select count(*) from branch join log_user_checkin on branch.id = log_user_checkin.idBranch where log_user_checkin.idUser = xref_user_commerce.idUser and branch.idCommerce = commerce.id) as visits', false);
+        $this->db->select('(select max(dateAction) from branch join log_user_checkin on branch.id = log_user_checkin.idBranch where log_user_checkin.idUser = xref_user_commerce.idUser and branch.idCommerce = commerce.id) as lastVisit', false);
         $this->db->from('xref_user_commerce');
         $this->db->join('commerce', 'xref_user_commerce.idCommerce = commerce.id');
         $this->db->where('xref_user_commerce.idUser', $id);
@@ -189,7 +189,8 @@ Class Api_db extends CI_MODEL
 		$this->db->select('reward.id, reward.name, reward.description, reward.terms, reward.points');
         $this->db->select('reward.vigency, reward.image, reward.idCommerce');
         $this->db->select('commerce.name as commerce, commerce.description as commerceDesc, commerce.image as comImage');
-        $this->db->select('palette.colorA1, palette.colorA2, palette.colorA3');
+        $this->db->select('bg1 as colorA1, bg2 as colorA2, bg3 as colorA3');
+        $this->db->select('bg1, bg2, bg3, font1, font2, font3');
         $this->db->select('xref_user_reward_fav.idReward as fav, ifnull(xref_user_commerce.points, 0) as userPoints, ifnull(xref_user_commerce.idCommerce, 0) as isCommerce', false);
         $this->db->from('reward');
         $this->db->join('commerce', 'reward.idCommerce = commerce.id ');
@@ -205,8 +206,8 @@ Class Api_db extends CI_MODEL
     // obtiene los comercios destacados
 	public function getCommerceFlow(){
         $this->db->select('commerce.id, commerce.name, commerce.description, commerce.image');
-        $this->db->select('palette.colorA1, palette.colorA2, palette.colorA3');
-        $this->db->select('palette.colorB1, palette.colorB2, palette.colorB3');
+        $this->db->select('bg1 as colorA1, bg2 as colorA2, bg3 as colorA3');
+        $this->db->select('bg1, bg2, bg3, font1, font2, font3');
         $this->db->from('commerce');
         $this->db->join('palette', 'commerce.idPalette = palette.id ');
         $this->db->where('commerce.important = 1');
@@ -217,7 +218,8 @@ Class Api_db extends CI_MODEL
     // obtiene los comercios
 	public function getCommerces($idUser, $filters){
         $this->db->select('commerce.id, commerce.name, commerce.description, commerce.address, commerce.lat, commerce.long, commerce.image');
-        $this->db->select('palette.colorA1, palette.colorA2, palette.colorA3');
+        $this->db->select('bg1 as colorA1, bg2 as colorA2, bg3 as colorA3');
+        $this->db->select('bg1, bg2, bg3, font1, font2, font3');
         $this->db->select('xref_user_commerce.points as afil');
         $this->db->from('commerce');
         $this->db->join('palette', 'commerce.idPalette = palette.id ');
@@ -234,7 +236,8 @@ Class Api_db extends CI_MODEL
     // obtiene los comercios
 	public function getCommercesByGPS($lat1, $lat2, $lon1, $lon2){
         $this->db->select('commerce.id, commerce.name, commerce.description, commerce.image');
-        $this->db->select('palette.colorA1, palette.colorA2, palette.colorA3');
+        $this->db->select('bg1 as colorA1, bg2 as colorA2, bg3 as colorA3');
+        $this->db->select('bg1, bg2, bg3, font1, font2, font3');
         $this->db->from('commerce');
         $this->db->join('palette', 'commerce.idPalette = palette.id ');
         $this->db->where('commerce.status = 1');
@@ -260,7 +263,8 @@ Class Api_db extends CI_MODEL
     // obtiene los comercios
 	public function getCommercesWCat($filters){
         $this->db->select('commerce.id, commerce.name, commerce.description, commerce.image');
-        $this->db->select('palette.colorA1, palette.colorA2, palette.colorA3');
+        $this->db->select('bg1 as colorA1, bg2 as colorA2, bg3 as colorA3');
+        $this->db->select('bg1, bg2, bg3, font1, font2, font3');
         $this->db->from('commerce');
         $this->db->join('palette', 'commerce.idPalette = palette.id ');
         if ($filters != '1'){
@@ -275,7 +279,8 @@ Class Api_db extends CI_MODEL
     // obtiene los comercios afiliados
 	public function getJoined($idUser, $filters){
         $this->db->select('commerce.id, commerce.name, commerce.description, commerce.image');
-        $this->db->select('palette.colorA1, palette.colorA2, palette.colorA3');
+        $this->db->select('bg1 as colorA1, bg2 as colorA2, bg3 as colorA3');
+        $this->db->select('bg1, bg2, bg3, font1, font2, font3');
         $this->db->select('xref_user_commerce.points as points');
         $this->db->select('(select count(*) from reward where reward.idCommerce = commerce.id and reward.status = 1) as rewards', false);
         $this->db->select('(select count(*) from reward where reward.idCommerce = commerce.id and reward.points <= xref_user_commerce.points and reward.status = 1) as posible', false);
@@ -294,7 +299,8 @@ Class Api_db extends CI_MODEL
     // obtiene los comercios afiliados
 	public function getComHome($idUser, $filters){
         $this->db->select('commerce.id, commerce.image, commerce.name, commerce.description, xref_user_commerce.points');
-        $this->db->select('palette.colorA1, palette.colorA2, palette.colorA3');
+        $this->db->select('bg1 as colorA1, bg2 as colorA2, bg3 as colorA3');
+        $this->db->select('bg1, bg2, bg3, font1, font2, font3');
         $this->db->from('commerce');
         $this->db->join('palette', 'commerce.idPalette = palette.id ');
         $this->db->join('xref_user_commerce', 'commerce.id = xref_user_commerce.idCommerce  and xref_user_commerce.idUser = '.$idUser, 'left');
@@ -325,13 +331,14 @@ Class Api_db extends CI_MODEL
 	public function getCommerce($idUser, $idCommerce){
         $this->db->select('commerce.id, commerce.name, commerce.description, commerce.detail, commerce.address, commerce.lat, commerce.long');
         $this->db->select('commerce.image, commerce.banner, commerce.phone, commerce.web, commerce.facebook, commerce.twitter');
-        $this->db->select('palette.colorA1, palette.colorA2, palette.colorA3');
+        $this->db->select('bg1 as colorA1, bg2 as colorA2, bg3 as colorA3');
+        $this->db->select('bg1, bg2, bg3, font1, font2, font3');
         $this->db->select('xref_user_commerce.points as points');
         $this->db->select('xref_user_commerce_fav.idCommerce as fav');
         $this->db->select('(select count(*) from reward where reward.idCommerce = commerce.id and reward.points <= xref_user_commerce.points) as avaliable', false);
         $this->db->select('(select count(*) from reward where reward.idCommerce = commerce.id) as rewards', false);
-        $this->db->select('(select count(*) from log_user_checkin where log_user_checkin.idUser = xref_user_commerce.idUser and log_user_checkin.idCommerce = commerce.id) as visits', false);
-        $this->db->select('(select max(dateAction) from log_user_checkin where log_user_checkin.idUser = xref_user_commerce.idUser and log_user_checkin.idCommerce = commerce.id) as lastVisit', false);
+        $this->db->select('(select count(*) from branch join log_user_checkin on branch.id = log_user_checkin.idBranch where log_user_checkin.idUser = xref_user_commerce.idUser and branch.idCommerce = commerce.id) as visits', false);
+        $this->db->select('(select max(dateAction) from branch join log_user_checkin on branch.id = log_user_checkin.idBranch where log_user_checkin.idUser = xref_user_commerce.idUser and branch.idCommerce = commerce.id) as lastVisit', false);
         $this->db->from('commerce');
         $this->db->join('palette', 'commerce.idPalette = palette.id ');
         $this->db->join('xref_user_commerce', 'commerce.id = xref_user_commerce.idCommerce  and xref_user_commerce.idUser = '.$idUser, 'left');

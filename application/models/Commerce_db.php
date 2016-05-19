@@ -61,7 +61,7 @@ Class Commerce_db extends CI_MODEL
     // obtiene el usuario
 	public function getUserPoints($idUser, $idCommerce){
         $this->db->select('user.id, user.name, xref_user_commerce.idCommerce, xref_user_commerce.points');
-        $this->db->select("TIMESTAMPDIFF(hour, (select max(log_user_checkin.dateAction) from  log_user_checkin where log_user_checkin.idUser = user.id and log_user_checkin.idCommerce = xref_user_commerce.idCommerce ), now()) as numhours", false);
+        $this->db->select("TIMESTAMPDIFF(hour, (select max(log_user_checkin.dateAction) from  log_user_checkin join branch on log_user_checkin.idBranch = branch.id where log_user_checkin.idUser = xref_user_commerce.idUser and branch.idCommerce = xref_user_commerce.idCommerce ), now()) as numhours", false);
         $this->db->from('user');
         $this->db->join('xref_user_commerce', 'xref_user_commerce.idUser = user.id and xref_user_commerce.idCommerce = '.$idCommerce, 'left');
         $this->db->where('user.id = '.$idUser);
@@ -102,16 +102,15 @@ Class Commerce_db extends CI_MODEL
 	}
     
     // obtiene los rewards canjeados del comercio
-	public function getRedemRewards($idCommerce){
+	public function getRedemRewards($idBranch){
         $this->db->select('redemption.id, redemption.dateChange, redemption.dateRedemption');
         $this->db->select('redemption.dateCancelation, redemption.status');
         $this->db->select('reward.name as reward, reward.points, reward.description, user.name as user');
         $this->db->from('redemption');
         $this->db->join('reward', 'redemption.idReward = reward.id', 'left');
         $this->db->join('user', 'redemption.idUser = user.id', 'left');
-        $this->db->where('redemption.idCommerce = '.$idCommerce);
+        $this->db->where('redemption.idBranch', $idBranch);
         $this->db->where('redemption.status = 1');
-        $this->db->limit(10);
         return  $this->db->get()->result();
     }
     
@@ -153,6 +152,15 @@ Class Commerce_db extends CI_MODEL
     /**------------------------------ APP COMMERCE ------------------------------**/
     
     // obtiene el reward
+	public function verifyPassword($password){
+        $this->db->select('branch.id as idBranch, branch.idCommerce, commerce.image');
+        $this->db->from('branch');
+        $this->db->join('commerce', 'branch.idCommerce = commerce.id');
+        $this->db->where('password', $password);
+        return  $this->db->get()->result();
+	}
+    
+    // obtiene el reward
 	public function getReward($idReward){
         $this->db->select('reward.id, reward.name, reward.description, reward.image, reward.points');
         $this->db->from('reward');
@@ -173,11 +181,12 @@ Class Commerce_db extends CI_MODEL
     
     
     // obtiene el usuario
-	public function isCashier($idUser, $idCommerce){
-        $this->db->select('id, name');
+	public function isCashier($idUser, $idBranch){
+        $this->db->select('cashier.id, commerce_user.nombre');
         $this->db->from('cashier');
-        $this->db->where('id = '.$idUser);
-        $this->db->where('idCommerce = '.$idCommerce);
+        $this->db->join('commerce_user', 'cashier.idComUser = commerce_user.id');
+        $this->db->where('cashier.idCard', $idUser);
+        $this->db->where('commerce_user.idBranch', $idBranch);
         return  $this->db->get()->result();
 	}
     
@@ -192,7 +201,7 @@ Class Commerce_db extends CI_MODEL
     // obtiene el usuario
 	public function isUserCommerce($idUser, $idCommerce){
         $this->db->select('xref_user_commerce.idUser, xref_user_commerce.points');
-        $this->db->select("TIMESTAMPDIFF(hour, (select max(log_user_checkin.dateAction) from  log_user_checkin where log_user_checkin.idUser = xref_user_commerce.idUser and log_user_checkin.idCommerce = xref_user_commerce.idCommerce ), now()) as numhours", false);
+        $this->db->select("TIMESTAMPDIFF(hour, (select max(log_user_checkin.dateAction) from  log_user_checkin join branch on log_user_checkin.idBranch = branch.id where log_user_checkin.idUser = xref_user_commerce.idUser and branch.idCommerce = xref_user_commerce.idCommerce ), now()) as numhours", false);
         $this->db->from('xref_user_commerce');
         $this->db->where('idUser', $idUser);
         $this->db->where('idCommerce', $idCommerce);
