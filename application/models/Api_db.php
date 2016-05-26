@@ -61,6 +61,15 @@ Class Api_db extends CI_MODEL
         $this->db->where('user.id', $id);
         return  $this->db->get()->result();
 	}
+    
+    // obtiene la informacion del usuario
+	public function getDeviceID($deviceID){
+		$this->db->select('user.id');
+        $this->db->from('user');
+        $this->db->where('deviceID', $deviceID);
+        return  $this->db->get()->result();
+	}
+    
     // obtiene la informacion del usuario
 	public function getAccountCommerces($id){
         $this->db->select('commerce.id, commerce.name, commerce.description, commerce.image, xref_user_commerce.points');
@@ -217,7 +226,7 @@ Class Api_db extends CI_MODEL
 
     // obtiene los comercios
 	public function getCommerces($idUser, $filters){
-        $this->db->select('commerce.id, commerce.name, commerce.description, commerce.address, commerce.lat, commerce.long, commerce.image');
+        $this->db->select('commerce.id, commerce.name, commerce.description, commerce.image');
         $this->db->select('bg1 as colorA1, bg2 as colorA2, bg3 as colorA3');
         $this->db->select('bg1, bg2, bg3, font1, font2, font3');
         $this->db->select('xref_user_commerce.points as afil');
@@ -329,8 +338,8 @@ Class Api_db extends CI_MODEL
 
     // obtiene los comercios destacados
 	public function getCommerce($idUser, $idCommerce){
-        $this->db->select('commerce.id, commerce.name, commerce.description, commerce.detail, commerce.address, commerce.lat, commerce.long');
-        $this->db->select('commerce.image, commerce.banner, commerce.phone, commerce.web, commerce.facebook, commerce.twitter');
+        $this->db->select('commerce.id, commerce.name, commerce.description, commerce.detail');
+        $this->db->select('commerce.image, commerce.banner, commerce.web, commerce.facebook, commerce.twitter');
         $this->db->select('bg1 as colorA1, bg2 as colorA2, bg3 as colorA3');
         $this->db->select('bg1, bg2, bg3, font1, font2, font3');
         $this->db->select('xref_user_commerce.points as points');
@@ -347,6 +356,15 @@ Class Api_db extends CI_MODEL
         $this->db->where('commerce.id', $idCommerce);
         $this->db->order_by("commerce.name", "asc");
         return  $this->db->get()->result();
+	}
+
+    // obtiene los comercios destacados
+	public function getCommerceBranchCity($idCommerce, $idCity){
+        $this->db->from('branch');
+        $this->db->where('idCommerce', $idCommerce);
+        $this->db->where('idCity', $idCity);
+        $this->db->limit(1);
+        return $this->db->get()->result();
 	}
 
     // obtiene los comercios destacados

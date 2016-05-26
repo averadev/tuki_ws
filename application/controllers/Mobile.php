@@ -65,12 +65,14 @@ class Mobile extends REST_Controller {
      * Crea usuario por APP
      */
     public function createUser_get(){
+        // Get Device ID
+        $deviceID = $this->Api_db->getDeviceID($this->get('deviceID'));
         // Get User
         $message = array('success' => false);
         $user = $this->Api_db->getUserEmail($this->get('email'));
         if (count($user) == 0){
             $months = $this->Api_db->getMonths()[0]->months;
-            $user = $this->Api_db->createUser($this->getRandomCode(), $months, array(
+            $newUser = array(
                 'id' => '', 
                 'fbid' => '', 
                 'name' => '', 
@@ -78,7 +80,13 @@ class Mobile extends REST_Controller {
                 'password' => md5($this->get('password')), 
                 'idCity' => 1,
                 'status' => 1
-            ));
+            );
+            if (count($deviceID) == 0){ 
+                $device = array('deviceID' => $this->get('deviceID'));
+                $newUser = array_merge($newUser, $device);
+            }
+            
+            $user = $this->Api_db->createUser($this->getRandomCode(), $months, $newUser);
             $user = $this->Api_db->getUserEmail($this->get('email'));
             $message = array('success' => true, 'user' => $user[0]);
         }
@@ -91,23 +99,30 @@ class Mobile extends REST_Controller {
      * Crea usuario por APP FB
      */
     public function createUserFB_get(){
+        // Get Device ID
+        $deviceID = $this->Api_db->getDeviceID($this->get('deviceID'));
         // Get User
         $user = $this->Api_db->getUserFbid($this->get('fbid'));
         if (count($user) == 0){
             $months = $this->Api_db->getMonths()[0]->months;
-            $user = $this->Api_db->createUser($this->getRandomCode(), $months, array(
+            $newUser = array(
                 'id' => '', 
                 'fbid' => $this->get('fbid'), 
                 'name' => $this->get('name'), 
                 'email' => $this->get('email'), 
                 'idCity' => 1,
                 'status' => 1
-            ));
+            );
+            if (count($deviceID) == 0){ 
+                $device = array('deviceID' => $this->get('deviceID'));
+                $newUser = array_merge($newUser, $device);
+            }
+            $user = $this->Api_db->createUser($this->getRandomCode(), $months, $newUser);
             $user = $this->Api_db->getUserFbid($this->get('fbid'));
-            
         }
+        
         // Retrive message
-        $message = array('success' => true, 'user' => $user[0]);
+        $message = array('success' => true, 'user' => $user[0] );
         $this->response($message, 200);
     }
     
@@ -262,6 +277,7 @@ class Mobile extends REST_Controller {
     public function getCommerces_get(){
         $filters = str_replace('-', ',', $this->get('filters'));
         $items = $this->Api_db->getCommerces($this->get('idUser'), $filters);
+        
         $message = array('success' => true, 'items' => $items);
         $this->response($message, 200);
     }
@@ -324,6 +340,15 @@ class Mobile extends REST_Controller {
         array_push($items, array('image' => $items[0]->banner));
         $rewards = $this->Api_db->getRewardsByCommerce($this->get('idUser'), $this->get('idCommerce'));
         $photos = $this->Api_db->getCommercePhotos($this->get('idCommerce'));
+        
+        // Branch
+        $branch = $this->Api_db->getCommerceBranchCity($this->get('idCommerce'), $this->get('idCity'));
+        if (count($branch) > 0){
+            $items[0]->address = $branch[0]->address;
+            $items[0]->phone = $branch[0]->phone;
+            $items[0]->lat = $branch[0]->lat;
+            $items[0]->long = $branch[0]->long;
+        }
         
         // Formatos fecha
         $months = array('', 'Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic');
