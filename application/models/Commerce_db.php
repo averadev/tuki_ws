@@ -179,9 +179,16 @@ Class Commerce_db extends CI_MODEL
         return  $this->db->get()->result();
 	}
     
+    // obtiene el usuario
+	public function isCashier($idUser){
+        $this->db->select('cashier.id');
+        $this->db->from('cashier');
+        $this->db->where('cashier.idCard', $idUser);
+        return  $this->db->get()->result();
+	}
     
     // obtiene el usuario
-	public function isCashier($idUser, $idBranch){
+	public function isCashierBranch($idUser, $idBranch){
         $this->db->select('cashier.id, commerce_user.nombre');
         $this->db->from('cashier');
         $this->db->join('commerce_user', 'cashier.idComUser = commerce_user.id');

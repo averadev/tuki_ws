@@ -208,9 +208,14 @@ class Commerce extends REST_Controller {
         $idQR = $this->get('qr');
         
         // Validar Cajero
-        $user = $this->Commerce_db->isCashier($idQR, $this->get('idBranch'));
+        $user = $this->Commerce_db->isCashier($idQR);
         if (count($user) >0){
-            $response = $this->response(array('success' => true, 'cashier' => $user[0]), 200);
+            $user = $this->Commerce_db->isCashierBranch($idQR, $this->get('idBranch'));
+            if (count($user) >0){
+                $response = $this->response(array('success' => true, 'cashier' => $user[0]), 200);
+            }else{
+                $response = $this->response(array('success' => false, 'cashier' => 1), 200);
+            }
         }else{
             
             // Validar LinkCard
