@@ -180,6 +180,19 @@ class Commerce extends REST_Controller {
 	/**
      * Obtiene las recompensas
      */
+    public function validateExit_get(){
+        $response = array('success' => false);
+        $branch = $this->Commerce_db->validateExit($this->get('idBranch'), md5($this->get('password')));
+        if (count($branch) > 0){
+            $response = array('success' => true );
+        }
+        
+        $this->response($response, 200);
+    }
+    
+	/**
+     * Obtiene las recompensas
+     */
     public function getRewards_get(){
         $rewards = $this->Commerce_db->getRewards($this->get('idCommerce'));
         $this->response(array('success' => true, 'items' => $rewards), 200);

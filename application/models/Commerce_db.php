@@ -161,6 +161,15 @@ Class Commerce_db extends CI_MODEL
 	}
     
     // obtiene el reward
+	public function validateExit($idBranch, $password){
+        $this->db->select('id');
+        $this->db->from('branch');
+        $this->db->where('id', $idBranch);
+        $this->db->where('password', $password);
+        return  $this->db->get()->result();
+	}
+    
+    // obtiene el reward
 	public function getReward($idReward){
         $this->db->select('reward.id, reward.name, reward.description, reward.image, reward.points');
         $this->db->from('reward');
