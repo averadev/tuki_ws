@@ -214,6 +214,15 @@ Class Commerce_db extends CI_MODEL
         return  $this->db->get()->result();
 	}
     
+    // obtiene puntos del usuario
+	public function checkPoints($idUser, $idCommerce){
+        $this->db->select('xref_user_commerce.idUser, xref_user_commerce.points');
+        $this->db->from('xref_user_commerce');
+        $this->db->where('idUser', $idUser);
+        $this->db->where('idCommerce', $idCommerce);
+        return  $this->db->get()->result();
+	}
+    
     // obtiene el usuario
 	public function isUserCommerce($idUser, $idCommerce){
         $this->db->select('xref_user_commerce.idUser, xref_user_commerce.points');

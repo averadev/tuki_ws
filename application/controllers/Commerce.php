@@ -215,6 +215,18 @@ class Commerce extends REST_Controller {
     /**
      * Validamos QR
      */
+    public function checkPoints_get(){
+        $response = array('success' => true, 'points' => 0);
+        $user = $this->Commerce_db->checkPoints($this->get('qr'), $this->get('idCommerce'));
+        if (count($user) > 0){
+            $response = array('success' => true, 'points' => $user[0]->points);
+        }                               
+        $this->response($response, 200);
+    }
+    
+    /**
+     * Validamos QR
+     */
     public function validateQR_get(){
         $response = array();
         $newPoints = 0;
@@ -238,8 +250,10 @@ class Commerce extends REST_Controller {
             }
             
             // Validar Usuario
+            $isNew = false;
             $user = $this->Commerce_db->isUser($idQR, $this->get('idCommerce'));
             if (count($user) == 0){
+                $isNew = true;
                 $this->Commerce_db->insertUser(array( 'id' => $idQR, 'idCity' => 1, 'status' => 1 ));
                 $user = $this->Commerce_db->isUser($idQR, $this->get('idCommerce'));
             }
@@ -265,7 +279,7 @@ class Commerce extends REST_Controller {
             // Obtener Usuario-Commercio
             $user = $this->Commerce_db->userPoints($idQR, $this->get('idCommerce'));
             $user[0]->newPoints = $newPoints;
-            $response = $this->response(array('success' => true, 'user' => $user[0]), 200);
+            $response = $this->response(array('success' => true, 'newUser' => $isNew, 'user' => $user[0]), 200);
         }
         
         $this->response($response, 200);
@@ -285,8 +299,7 @@ class Commerce extends REST_Controller {
             if (count($user) > 0 && count($reward) > 0){
                 $response = array('success' => true, 'user' => $user[0], 'reward' => $reward[0]);
             }
-        }
-                                          
+        }                                 
                                           
         $this->response($response, 200);
     }
