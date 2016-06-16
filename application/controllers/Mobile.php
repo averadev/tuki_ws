@@ -35,12 +35,13 @@ class Mobile extends REST_Controller {
      */
     public function getHomeRewards_get(){
         $items = $this->Api_db->getComHome($this->get('idUser'), '1');
+        $wallet = $this->Api_db->countWallet($this->get('idUser'))[0]->total;
         // Rewards
         foreach ($items as $item):
             $item->rewards  = $this->Api_db->getRewardsH($this->get('idUser'), $item->id);;
         endforeach;
         
-        $message = array('success' => true, 'items' => $items);
+        $message = array('success' => true, 'wallet' => $wallet, 'items' => $items);
         $this->response($message, 200);
     }
 
@@ -167,14 +168,27 @@ class Mobile extends REST_Controller {
     public function setCommerceJoin_get(){
         // Join user to commerce and log it
         $isNew = false;
+        $isGift = 0;
         $userCommerce = $this->Api_db->getUserCommerce($this->get('idUser'), $this->get('idCommerce'));
         if (count($userCommerce) == 0){
             $isNew = true;
             $this->Api_db->insertUserCommerce(array( 'idUser' => $this->get('idUser'),  'idCommerce' => $this->get('idCommerce'), 'points' => '0' ));
             $this->Api_db->logNewUserCom(array( 'idUser' => $this->get('idUser'), 'idCommerce' => $this->get('idCommerce') ));
+            
+            // Add Gift if exists
+            $gifts  = $this->Api_db->isCommerceGift($this->get('idCommerce'));
+            if (count($gifts) > 0){
+                foreach ($gifts as $gift):
+                    $isWallet = $this->Api_db->isWallet($this->get('idUser'), $this->get('deviceID'), $gift->id);
+                    if (count($isWallet) == 0){
+                        $isGift = $isGift + 1;
+                        $this->Api_db->insertWallet(array( 'idUser' => $this->get('idUser'), 'deviceID' => $this->get('deviceID'), 'idReward' => $gift->id, 'status' => 1 ));
+                    }
+                endforeach;
+            }
         }
         // Retrive message
-        $message = array('success' => $isNew);
+        $message = array('success' => $isNew, 'gift' => $isGift);
         $this->response($message, 200);
     }
     
@@ -190,7 +204,18 @@ class Mobile extends REST_Controller {
                 $isNew = true;
                 $this->Api_db->insertUserCommerce(array( 'idUser' => $this->get('idUser'),  'idCommerce' => $idComm, 'points' => '0' ));
                 $this->Api_db->logNewUserCom(array( 'idUser' => $this->get('idUser'), 'idCommerce' => $idComm ));
-            }
+                
+                // Add Gift if exists
+                $gifts  = $this->Api_db->isCommerceGift($idComm);
+                if (count($gifts) > 0){
+                    foreach ($gifts as $gift):
+                        $isWallet = $this->Api_db->isWallet($this->get('idUser'), $this->get('deviceID'), $gift->id);
+                        if (count($isWallet) == 0){
+                            $this->Api_db->insertWallet(array( 'idUser' => $this->get('idUser'), 'deviceID' => $this->get('deviceID'), 'idReward' => $gift->id, 'status' => 1 ));
+                        }
+                    endforeach;
+                }
+            }   
         endforeach;
         
         
@@ -380,6 +405,15 @@ class Mobile extends REST_Controller {
     /**------------------------------ WALLET ------------------------------**/
 
     /**
+     * Actualiza estatus gift
+     */
+    public function setReadGift_get(){
+        $this->Api_db->setStatusGift($this->get('idUser'), $this->get('idReward'), array('status' => 2));
+        $message = array('success' => true);
+        $this->response($message, 200);
+    }
+    
+    /**
      * Obtiene las recompensas
      */
     public function getWallet_get(){
@@ -517,9 +551,27 @@ class Mobile extends REST_Controller {
                     $message = array('success' => true, 'message' => "NewCard", 'idCard' => $this->get('idCard'));
                 }else{
                     // Sumamos puntos
+                    $isGift = 0;
                     $points = $this->Api_db->getCardPoints($this->get('idCard'));
                     $this->Api_db->assignCardPoints($this->get('idUser'), $points);
-                    $message = array('success' => true, 'points' => $points, 'idCard' => $this->get('idCard'));
+                    
+                    // Add Gift if exists
+                    foreach ($points as $idComm):
+                       // Add Gift if exists
+                        $gifts  = $this->Api_db->isCommerceGift($idComm->idCommerce);
+                        if (count($gifts) > 0){
+                            foreach ($gifts as $gift):
+                                $isWallet = $this->Api_db->isWallet($this->get('idUser'), $this->get('deviceID'), $gift->id);
+                                if (count($isWallet) == 0){
+                                    $isGift = $isGift + 1;
+                                    $this->Api_db->insertWallet(array( 'idUser' => $this->get('idUser'), 'deviceID' => $this->get('deviceID'), 'idReward' => $gift->id, 'status' => 1 ));
+                                }
+                            endforeach;
+                        }
+                    endforeach;
+                    
+                    // Se agregaron multiples comercios
+                    $message = array('success' => true, 'points' => $points, 'gift' => $isGift, 'idCard' => $this->get('idCard'));
                 }
                 $this->Api_db->insertUserCard(array( 'idUser' => $this->get('idUser'), 'idCard' => $this->get('idCard'), 'status' => 1));
 

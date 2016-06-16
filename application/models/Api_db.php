@@ -250,8 +250,8 @@ Class Api_db extends CI_MODEL
         $this->db->from('commerce');
         $this->db->join('palette', 'commerce.idPalette = palette.id ');
         $this->db->where('commerce.status = 1');
-        $this->db->where('(commerce.lat > '.$lat1.' AND commerce.lat < '.$lat2.')', '', false);
-        $this->db->where('(commerce.long > '.$lon1.' AND commerce.long < '.$lon2.')', '', false);
+        //$this->db->where('(commerce.lat > '.$lat1.' AND commerce.lat < '.$lat2.')', '', false);
+        //$this->db->where('(commerce.long > '.$lon1.' AND commerce.long < '.$lon2.')', '', false);
         $this->db->group_by('commerce.id'); 
         $this->db->order_by("commerce.name", "asc");
         return  $this->db->get()->result();
@@ -259,12 +259,13 @@ Class Api_db extends CI_MODEL
     
     // obtiene los comercios
 	public function getCommercesByGPSLite($lat1, $lat2, $lon1, $lon2){
-        $this->db->select('commerce.id, commerce.name, idCategory, commerce.description, commerce.address, commerce.lat, commerce.long');
-        $this->db->from('commerce');
+        $this->db->select('commerce.id, commerce.name, idCategory, commerce.description, branch.address, branch.lat, branch.long');
+        $this->db->from('branch');
+        $this->db->join('commerce', 'branch.idCommerce = commerce.id', 'left');
         $this->db->join('xref_commerce_categories', 'commerce.id = xref_commerce_categories.idCommerce');
         $this->db->where('commerce.status = 1');
-        $this->db->where('(commerce.lat > '.$lat1.' AND commerce.lat < '.$lat2.')', '', false);
-        $this->db->where('(commerce.long > '.$lon1.' AND commerce.long < '.$lon2.')', '', false);
+        //$this->db->where('(commerce.lat > '.$lat1.' AND commerce.lat < '.$lat2.')', '', false);
+        //$this->db->where('(commerce.long > '.$lon1.' AND commerce.long < '.$lon2.')', '', false);
         $this->db->group_by('commerce.id'); 
         return  $this->db->get()->result();
 	}
@@ -388,7 +389,56 @@ Class Api_db extends CI_MODEL
 	}
 
     /**------------------------------ WALLET ------------------------------**/
-
+    
+    // obtiene los rewards con fav
+	public function isCommerceGift($idCommerce){
+        $this->db->from('reward');
+        $this->db->where('status = -1');
+        $this->db->where('idCommerce', $idCommerce);
+        return  $this->db->get()->result();
+        
+	}
+    
+    // obtiene la informacion del usuario
+	public function getUserDevice($idUser){
+		$this->db->select('id, deviceID');
+        $this->db->from('user');
+        $this->db->where('id', $idUser);
+        return  $this->db->get()->result();
+	}
+    
+    // obtiene la informacion del usuario
+	public function isWallet($idUser, $deviceID, $idReward){
+		$this->db->select('idUser');
+        $this->db->from('xref_user_wallet');
+        $this->db->where('idReward', $idReward);
+        $this->db->where("(idUser = ".$idUser." OR deviceID = '".$deviceID."')");
+        return  $this->db->get()->result();
+	}
+    
+    // obtiene la informacion del usuario
+	public function insertWallet($data){
+		$this->db->insert('xref_user_wallet', $data);
+        return  1;
+	}
+    
+    // cuenta numero de mensajes nuevos
+	public function countWallet($idUser){
+        $this->db->select('count(*) as total', false);
+        $this->db->from('xref_user_wallet');
+        $this->db->where('idUser', $idUser);
+        $this->db->where('status', 1);
+        return  $this->db->get()->result();
+    }
+    
+    // actualiza estatus gift
+	public function setStatusGift($idUser, $idReward, $data){
+        $this->db->where('idUser', $idUser);
+        $this->db->where('idReward', $idReward);
+        $this->db->update('xref_user_wallet', $data);
+        return  1;
+	}
+    
     // obtiene los rewards con fav
 	public function getWallet($idUser){
 		$this->db->select('reward.id, reward.name, reward.image');
@@ -397,7 +447,6 @@ Class Api_db extends CI_MODEL
         $this->db->from('xref_user_wallet');
         $this->db->join('reward', 'xref_user_wallet.idReward = reward.id and xref_user_wallet.idUser = '.$idUser, 'left');
         $this->db->join('commerce', 'reward.idCommerce = commerce.id ');
-        $this->db->where('reward.status = 1');
         $this->db->where('commerce.status = 1');
         $this->db->order_by("xref_user_wallet.status, xref_user_wallet.dateReden", "asc");
         return  $this->db->get()->result();
