@@ -266,7 +266,7 @@ Class Api_db extends CI_MODEL
         $this->db->where('commerce.status = 1');
         //$this->db->where('(commerce.lat > '.$lat1.' AND commerce.lat < '.$lat2.')', '', false);
         //$this->db->where('(commerce.long > '.$lon1.' AND commerce.long < '.$lon2.')', '', false);
-        $this->db->group_by('commerce.id'); 
+        //$this->db->group_by('commerce.id'); 
         return  $this->db->get()->result();
 	}
 
