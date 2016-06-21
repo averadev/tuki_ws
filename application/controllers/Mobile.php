@@ -369,10 +369,12 @@ class Mobile extends REST_Controller {
         // Branch
         $branch = $this->Api_db->getCommerceBranchCity($this->get('idCommerce'), $this->get('idCity'));
         if (count($branch) > 0){
-            $items[0]->address = $branch[0]->address;
             $items[0]->phone = $branch[0]->phone;
-            $items[0]->lat = $branch[0]->lat;
-            $items[0]->long = $branch[0]->long;
+            $items[0]->address = '';
+            foreach ($branch as $item):
+                if (!($items[0]->address == '')){$items[0]->address = $items[0]->address . '  ';}
+                $items[0]->address = $items[0]->address . $item->address;
+            endforeach;
         }
         
         // Formatos fecha

@@ -364,7 +364,6 @@ Class Api_db extends CI_MODEL
         $this->db->from('branch');
         $this->db->where('idCommerce', $idCommerce);
         $this->db->where('idCity', $idCity);
-        $this->db->limit(1);
         return $this->db->get()->result();
 	}
 
