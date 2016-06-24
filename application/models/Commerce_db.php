@@ -249,6 +249,30 @@ Class Commerce_db extends CI_MODEL
         $this->db->where('idCard', $idCard);
         return  $this->db->get()->result();
 	}
+    
+    // verifica si es un regalo
+	public function isGift($idReward){
+        $this->db->from('reward');
+        $this->db->where('id', $idReward);
+        $this->db->where('status = -1');
+        return  $this->db->get()->result();
+	}
+    
+    // verifica si es un regalo
+	public function isDisabledGift($idUser, $idReward){
+        $this->db->from('xref_user_wallet');
+        $this->db->where('idUser', $idUser);
+        $this->db->where('idReward', $idReward);
+        $this->db->where('status = 3');
+        return  $this->db->get()->result();
+	}
+    
+    // deshabilita regalo del usuario
+	public function changeGift($idUser, $idReward, $status){
+        $this->db->where('idUser', $idUser);
+        $this->db->where('idReward', $idReward);
+        $this->db->update('xref_user_wallet', array('status' => $status));
+	}
 
 }
 //end model

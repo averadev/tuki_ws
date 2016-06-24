@@ -298,6 +298,12 @@ class Commerce extends REST_Controller {
             $reward = $this->Commerce_db->getReward($ids[1]);
             if (count($user) > 0 && count($reward) > 0){
                 $response = array('success' => true, 'user' => $user[0], 'reward' => $reward[0]);
+                
+                // Validar Regalos
+                $gift = $this->Commerce_db->isDisabledGift($ids[0], $ids[1]);
+                if (count($gift) > 0){
+                    $response = array('success' => false, 'mensaje' => 'El regalo ya fue cambiado');
+                }
             }
         }                                 
                                           
@@ -316,6 +322,11 @@ class Commerce extends REST_Controller {
             $points = $user[0]->points - intval($this->get('points'));
             // Update points
             $this->Commerce_db->setUserPoints($this->get('idUser'), $this->get('idCommerce'), array('points' => $points));
+            // Verify Gift
+            $gift = $this->Commerce_db->isGift($this->get('idReward'));
+            if (count($gift) > 0){
+                $this->Commerce_db->changeGift($this->get('idUser'), $this->get('idReward'), 3);
+            }
             
             // Insert data
             $user = $this->Commerce_db->insertRedemption(array(
@@ -345,6 +356,12 @@ class Commerce extends REST_Controller {
             $points = $user[0]->points + intval($this->get('points'));
             // Update points
             $this->Commerce_db->setUserPoints($reden[0]->idUser, $this->get('idCommerce'), array('points' => $points));
+            
+            // Verify Gift
+            $gift = $this->Commerce_db->isGift($reden[0]->idReward);
+            if (count($gift) > 0){
+                $this->Commerce_db->changeGift($reden[0]->idUser, $reden[0]->idReward, 2);
+            }
         }
         
         $this->response(array('success' => true), 200);
