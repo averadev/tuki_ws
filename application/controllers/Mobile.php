@@ -106,11 +106,39 @@ class Mobile extends REST_Controller {
         $user = $this->Api_db->getUserFbid($this->get('fbid'));
         if (count($user) == 0){
             $months = $this->Api_db->getMonths()[0]->months;
+            
+            $name = $this->get('name');
+            $firstName = $this->get('firstName');
+            $lastName = $this->get('lastName');
+            $ageMin = $this->get('ageMin'); 
+            $ageMax = $this->get('ageMax'); 
+            $gender = $this->get('gender'); 
+            $locale = $this->get('locale'); 
+            $timezone = $this->get('timezone'); 
+            $email = $this->get('email');
+             
+            if ($name == '0') {$name = null;}
+            if ($firstName == '0') {$firstName = null;}
+            if ($lastName == '0') {$lastName = null;}
+            if ($ageMin == '0') {$ageMin = null;}
+            if ($ageMax == '0') {$ageMax = null;}
+            if ($gender == '0') {$gender = null;}
+            if ($locale == '0') {$locale = null;}
+            if ($timezone == '0') {$timezone = null;}
+            if ($email == '0') {$email = null;}
+            
             $newUser = array(
                 'id' => '', 
                 'fbid' => $this->get('fbid'), 
-                'name' => $this->get('name'), 
-                'email' => $this->get('email'), 
+                'name' => $name, 
+                'firstName' => $firstName, 
+                'lastName' => $lastName, 
+                'ageMin' => $ageMin, 
+                'ageMax' => $ageMax, 
+                'gender' => $gender, 
+                'locale' => $locale, 
+                'timezone' => $timezone, 
+                'email' => $email, 
                 'idCity' => 1,
                 'status' => 1
             );
@@ -427,6 +455,30 @@ class Mobile extends REST_Controller {
             $item->fecha = date('d', strtotime($item->dateReden)) . ' de ' . $months[date('n', strtotime($item->dateReden))] . ' del ' . date('Y', strtotime($item->dateReden));
         endforeach;
 
+        $message = array('success' => true, 'items' => $items);
+        $this->response($message, 200);
+    }
+    
+    /**------------------------------ CITIES ------------------------------**/
+
+    /**
+     * Actualiza estatus gift
+     */
+    public function setCity_get(){
+        $this->Api_db->setCity($this->get('idUser'), $this->get('idCity'));
+        $message = array('success' => true);
+        $this->response($message, 200);
+    }
+    
+    /**
+     * Obtiene las recompensas
+     */
+    public function getCities_get(){
+        
+        $data = $this->get('data');
+        if ($data == '-') $data = '';
+        $items = $this->Api_db->getCities($this->get('idUser'), $data);
+        
         $message = array('success' => true, 'items' => $items);
         $this->response($message, 200);
     }

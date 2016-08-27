@@ -450,6 +450,25 @@ Class Api_db extends CI_MODEL
         $this->db->order_by("xref_user_wallet.status, xref_user_wallet.dateReden", "asc");
         return  $this->db->get()->result();
 	}
+    
+    /**------------------------------ CITIES ------------------------------**/
+    
+    // actualiza estatus gift
+	public function setCity($idUser, $idCity){
+        $this->db->where('id', $idUser);
+        $this->db->update('user', array('idCity' => $idCity));
+        return  1;
+	}
+    
+    // obtiene la informacion del usuario
+	public function getCities($idUser, $data){
+		$this->db->select('city.id, city.name, user.id as user');
+        $this->db->from('city');
+        $this->db->join('user', 'city.id = user.idCity and user.id = '.$idUser, 'left');
+        $this->db->where("city.name like '%".$data."%'");
+        $this->db->order_by("city.name", "asc");
+        return  $this->db->get()->result();
+	}
 
     /**------------------------------ MESSAGES ------------------------------**/
 
