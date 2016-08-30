@@ -213,24 +213,31 @@ Class Api_db extends CI_MODEL
     /**------------------------------ COMMERCE ------------------------------**/
 
     // obtiene los comercios destacados
-	public function getCommerceFlow(){
+	public function getCommerceFlow($idCity){
         $this->db->select('commerce.id, commerce.name, commerce.description, commerce.image');
         $this->db->select('bg1 as colorA1, bg2 as colorA2, bg3 as colorA3');
         $this->db->select('bg1, bg2, bg3, font1, font2, font3');
-        $this->db->from('commerce');
+        if ($idCity == 0){
+            $this->db->from('commerce');
+        }else{
+            $this->db->from('branch');
+            $this->db->join('commerce', 'branch.idCommerce = commerce.id and idCity = '.$idCity);
+        }
         $this->db->join('palette', 'commerce.idPalette = palette.id ');
         $this->db->where('commerce.important = 1');
         $this->db->where('commerce.status = 1');
+        $this->db->group_by('commerce.id'); 
         return  $this->db->get()->result();
 	}
 
     // obtiene los comercios
-	public function getCommerces($idUser, $filters){
+	public function getCommerces($idUser, $filters, $idCity){
         $this->db->select('commerce.id, commerce.name, commerce.description, commerce.image');
         $this->db->select('bg1 as colorA1, bg2 as colorA2, bg3 as colorA3');
         $this->db->select('bg1, bg2, bg3, font1, font2, font3');
         $this->db->select('xref_user_commerce.points as afil');
-        $this->db->from('commerce');
+        $this->db->from('branch');
+        $this->db->join('commerce', 'branch.idCommerce = commerce.id and idCity = '.$idCity);
         $this->db->join('palette', 'commerce.idPalette = palette.id ');
         $this->db->join('xref_user_commerce', 'commerce.id = xref_user_commerce.idCommerce  and xref_user_commerce.idUser = '.$idUser, 'left');
         if ($filters != '1'){
@@ -307,16 +314,14 @@ Class Api_db extends CI_MODEL
 	}
     
     // obtiene los comercios afiliados
-	public function getComHome($idUser, $filters){
+	public function getComHome($idUser, $idCity){
         $this->db->select('commerce.id, commerce.image, commerce.name, commerce.description, xref_user_commerce.points');
         $this->db->select('bg1 as colorA1, bg2 as colorA2, bg3 as colorA3');
         $this->db->select('bg1, bg2, bg3, font1, font2, font3');
-        $this->db->from('commerce');
+        $this->db->from('branch');
+        $this->db->join('commerce', 'branch.idCommerce = commerce.id and idCity = '.$idCity);
         $this->db->join('palette', 'commerce.idPalette = palette.id ');
         $this->db->join('xref_user_commerce', 'commerce.id = xref_user_commerce.idCommerce  and xref_user_commerce.idUser = '.$idUser, 'left');
-        if ($filters != '1'){
-            $this->db->join('xref_commerce_categories', 'commerce.id = xref_commerce_categories.idCommerce  and xref_commerce_categories.idCategory in ( '.$filters.' )');
-        }
         $this->db->where('commerce.status = 1');
         $this->db->group_by('commerce.id'); 
         $this->db->order_by("commerce.name", "asc");
@@ -452,6 +457,14 @@ Class Api_db extends CI_MODEL
 	}
     
     /**------------------------------ CITIES ------------------------------**/
+    
+    // actualiza estatus gift
+	public function getCity($idUser){
+         $this->db->select('idCity');
+        $this->db->from('user');
+        $this->db->where('id', $idUser);
+        return  $this->db->get()->result();
+	}
     
     // actualiza estatus gift
 	public function setCity($idUser, $idCity){

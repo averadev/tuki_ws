@@ -34,7 +34,8 @@ class Mobile extends REST_Controller {
      * Obtiene el comercio por id
      */
     public function getHomeRewards_get(){
-        $items = $this->Api_db->getComHome($this->get('idUser'), '1');
+        $idCity = $this->Api_db->getCity($this->get('idUser'))[0]->idCity;
+        $items = $this->Api_db->getComHome($this->get('idUser'), $idCity);
         $wallet = $this->Api_db->countWallet($this->get('idUser'))[0]->total;
         // Rewards
         foreach ($items as $item):
@@ -318,7 +319,12 @@ class Mobile extends REST_Controller {
      * Obtiene la recompensa
      */
     public function getCommerceFlow_get(){
-        $items = $this->Api_db->getCommerceFlow();
+        $idCity = 0;
+        if ($this->get('idUser') != '1'){
+            $idCity = $this->Api_db->getCity($this->get('idUser'))[0]->idCity;
+        }
+        
+        $items = $this->Api_db->getCommerceFlow($idCity);
         shuffle($items);
         $message = array('success' => true, 'items' => $items);
         $this->response($message, 200);
@@ -329,7 +335,8 @@ class Mobile extends REST_Controller {
      */
     public function getCommerces_get(){
         $filters = str_replace('-', ',', $this->get('filters'));
-        $items = $this->Api_db->getCommerces($this->get('idUser'), $filters);
+        $idCity = $this->Api_db->getCity($this->get('idUser'))[0]->idCity;
+        $items = $this->Api_db->getCommerces($this->get('idUser'), $filters, $idCity);
         
         $message = array('success' => true, 'items' => $items);
         $this->response($message, 200);
