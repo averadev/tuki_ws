@@ -402,7 +402,8 @@ class Mobile extends REST_Controller {
         $photos = $this->Api_db->getCommercePhotos($this->get('idCommerce'));
         
         // Branch
-        $branch = $this->Api_db->getCommerceBranchCity($this->get('idCommerce'), $this->get('idCity'));
+        $idCity = $this->Api_db->getCity($this->get('idUser'))[0]->idCity;
+        $branch = $this->Api_db->getCommerceBranchCity($this->get('idCommerce'), $idCity);
         if (count($branch) > 0){
             $items[0]->phone = $branch[0]->phone;
             $items[0]->address = '';
