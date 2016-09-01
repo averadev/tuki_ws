@@ -177,7 +177,6 @@ Class Commerce_db extends CI_MODEL
         return  $this->db->get()->result();
 	}
     
-    
     // obtiene los rewards
 	public function getRewards($idCommerce){
         $this->db->select('reward.id, reward.name, reward.description, reward.image, reward.points');

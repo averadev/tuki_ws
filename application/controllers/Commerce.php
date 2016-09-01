@@ -194,8 +194,9 @@ class Commerce extends REST_Controller {
      * Obtiene las recompensas
      */
     public function getRewards_get(){
+        $logo = $this->Commerce_db->getlogo($this->get('idCommerce'));
         $rewards = $this->Commerce_db->getRewards($this->get('idCommerce'));
-        $this->response(array('success' => true, 'items' => $rewards), 200);
+        $this->response(array('success' => true, 'logo' => $logo, 'items' => $rewards), 200);
     }
     
 	/**
@@ -236,7 +237,7 @@ class Commerce extends REST_Controller {
         $user = $this->Commerce_db->isCashier($idQR);
         if (count($user) >0){
             $user = $this->Commerce_db->isCashierBranch($idQR, $this->get('idBranch'));
-            if (count($user) >0){
+            if (count($user) > 0){
                 $response = $this->response(array('success' => true, 'cashier' => $user[0]), 200);
             }else{
                 $response = $this->response(array('success' => false, 'cashier' => 1), 200);
