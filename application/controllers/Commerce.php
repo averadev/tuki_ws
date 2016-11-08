@@ -269,7 +269,7 @@ class Commerce extends REST_Controller {
                 $this->Commerce_db->logCheckin(array( 'idUser' => $idQR, 'points' => 10, 'idBranch' => $this->get('idBranch') ));
             }else{
                 $user = $user[0];
-                if ($user->numhours == null || $user->numhours >= 6){
+                if ($user->numhours == null || $user->numhours >= 6){ //6){
                     $newPoints = 10;
                     $user->points = $user->points + 10;
                     $this->Commerce_db->setUserPoints($idQR, $this->get('idCommerce'), array('points' => $user->points));

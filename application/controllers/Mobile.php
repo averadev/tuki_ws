@@ -157,6 +157,15 @@ class Mobile extends REST_Controller {
     }
     
     /**
+     * Actualiza onesignalid
+     */
+    public function updateOneSignalId_get(){
+        // Update User
+        $user = $this->Api_db->updateOneSignalId($this->get('idUser'), $this->get('oneSignalId'));
+        $this->response(array('success' => true), 200);
+    }
+    
+    /**
      * Valida usuario
      */
     public function validateUser_get(){
@@ -312,6 +321,20 @@ class Mobile extends REST_Controller {
         $message = array('success' => true, 'items' => $items);
         $this->response($message, 200);
     }
+    
+    /**
+     * Obtiene la recompensa
+     */
+    public function isGiftRedem_get(){
+        $message = array('success' => false);
+        $gift = $this->Api_db->isGiftRedem($this->get('idUser'), $this->get('idReward'));
+        if (count($gift) > 0){
+            if ($gift[0]->status >= 3){
+                $message = array('success' => true);
+            }
+        }
+        $this->response($message, 200);
+    }
 
     /**------------------------------ COMMERCE ------------------------------**/
 
@@ -399,29 +422,20 @@ class Mobile extends REST_Controller {
         $items = $this->Api_db->getCommerce($this->get('idUser'), $this->get('idCommerce'));
         array_push($items, array('image' => $items[0]->banner));
         $rewards = $this->Api_db->getRewardsByCommerce($this->get('idUser'), $this->get('idCommerce'));
-        $photos = $this->Api_db->getCommercePhotos($this->get('idCommerce'));
-        
+        $photos = $this->Api_db->getCommercePhotos($this->get('idCommerce')); 
         // Branch
         $idCity = $this->Api_db->getCity($this->get('idUser'))[0]->idCity;
-        $branch = $this->Api_db->getCommerceBranchCity($this->get('idCommerce'), $idCity);
-        if (count($branch) > 0){
-            $items[0]->phone = $branch[0]->phone;
-            $items[0]->address = '';
-            foreach ($branch as $item):
-                if (!($items[0]->address == '')){$items[0]->address = $items[0]->address . '  ';}
-                $items[0]->address = $items[0]->address . $item->address;
-            endforeach;
-        }
+        $branchs = $this->Api_db->getCommerceBranchCity($this->get('idCommerce'), $idCity);
         
         // Formatos fecha
-        $months = array('', 'Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic');
+        $months = array('', 'ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE');
         foreach ($items as $item):
             if (isset($item->lastVisit)) {
-                $item->lastVisit = date('d', strtotime($item->lastVisit)) . '/' . $months[date('n', strtotime($item->lastVisit))] . '/' . date('Y', strtotime($item->lastVisit));
+                $item->lastVisit = date('d', strtotime($item->lastVisit)) . ' DE ' . $months[date('n', strtotime($item->lastVisit))] . ' ' . date('Y', strtotime($item->lastVisit));
             }
         endforeach;
         
-        $message = array('success' => true, 'items' => $items, 'rewards' => $rewards, 'photos' => $photos);
+        $message = array('success' => true, 'items' => $items, 'rewards' => $rewards, 'photos' => $photos, 'branchs' => $branchs);
         $this->response($message, 200);
     }
 
@@ -460,6 +474,7 @@ class Mobile extends REST_Controller {
         // Fecha Vigencia
         $months = array('', 'Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre');
         foreach ($items as $item):
+            $item->vigency = date('d', strtotime($item->vigency)) . ' de ' . $months[date('n', strtotime($item->vigency))] . ' del ' . date('Y', strtotime($item->vigency));
             $item->fecha = date('d', strtotime($item->dateReden)) . ' de ' . $months[date('n', strtotime($item->dateReden))] . ' del ' . date('Y', strtotime($item->dateReden));
         endforeach;
 
@@ -482,11 +497,60 @@ class Mobile extends REST_Controller {
      * Obtiene las recompensas
      */
     public function getCities_get(){
-        
         $data = $this->get('data');
         if ($data == '-') $data = '';
         $items = $this->Api_db->getCities($this->get('idUser'), $data);
         
+        $message = array('success' => true, 'items' => $items);
+        $this->response($message, 200);
+    }
+    
+    /**
+     * Obtiene las recompensas
+     */
+    public function getIdCity_get(){
+        $message = array('idCity' => 0);
+        
+        if(stristr($this->get('address'), 'Cancún')){
+            $message = array('idCity' => 1);
+        }elseif(stristr($this->get('address'), 'Merida')){
+            $message = array('idCity' => 2);
+        }elseif(stristr($this->get('address'), 'Mexico City')){
+            $message = array('idCity' => 3);
+        }
+        $this->response($message, 200);
+    }
+
+    /**------------------------------ MESSAGES SEG ------------------------------**/
+    
+    /**
+     * Obtiene las recompensas
+     */
+    public function getMessagesSeg_get(){
+        $items = $this->Api_db->getMessagesSeg($this->get('idUser'));
+
+        // Fecha Vigencia
+        $months = array('', 'Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre');
+        foreach ($items as $item):
+            $item->fecha = date('d', strtotime($item->dateIncome)) . ' de ' . $months[date('n', strtotime($item->dateIncome))] . ' del ' . date('Y', strtotime($item->dateIncome));
+        endforeach;
+
+        $message = array('success' => true, 'items' => $items);
+        $this->response($message, 200);
+    }
+
+    /**
+     * Obtiene las recompensas
+     */
+    public function getMessageSeg_get(){
+        $items = $this->Api_db->getMessageSeg($this->get('idMessage'));
+
+        // Fecha Vigencia
+        $months = array('', 'Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre');
+        foreach ($items as $item):
+            $item->fecha = date('d', strtotime($item->dateIncome)) . ' de ' . $months[date('n', strtotime($item->dateIncome))] . ' del ' . date('Y', strtotime($item->dateIncome));
+        endforeach;
+
         $message = array('success' => true, 'items' => $items);
         $this->response($message, 200);
     }
@@ -497,18 +561,7 @@ class Mobile extends REST_Controller {
      * Obtiene las recompensas
      */
     public function getMessages_get(){
-        $items = $this->Api_db->getMessages($this->get('idUser'));
-
-        // Fecha Vigencia
-        $months = array('', 'Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre');
-        foreach ($items as $item):
-            $item->fecha = date('d', strtotime($item->dateIncome)) . ' de ' . $months[date('n', strtotime($item->dateIncome))] . ' del ' . date('Y', strtotime($item->dateIncome));
-            $item->from = "Equipo de Tuki";
-            if ($item->user){ $item->from = $item->user; }
-            if ($item->commerce){ $item->from = $item->commerce; }
-        endforeach;
-
-        $message = array('success' => true, 'items' => $items);
+        $message = array('success' => true, 'items' => array());
         $this->response($message, 200);
     }
 
@@ -516,18 +569,7 @@ class Mobile extends REST_Controller {
      * Obtiene las recompensas
      */
     public function getMessage_get(){
-        $items = $this->Api_db->getMessage($this->get('idMessage'));
-
-        // Fecha Vigencia
-        $months = array('', 'Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre');
-        foreach ($items as $item):
-            $item->fecha = date('d', strtotime($item->dateIncome)) . ' de ' . $months[date('n', strtotime($item->dateIncome))] . ' del ' . date('Y', strtotime($item->dateIncome));
-            $item->from = "Equipo de Tuki";
-            if ($item->user){ $item->from = $item->user; }
-            if ($item->commerce){ $item->from = $item->commerce; }
-        endforeach;
-
-        $message = array('success' => true, 'items' => $items);
+        $message = array('success' => true, 'items' => array());
         $this->response($message, 200);
     }
     

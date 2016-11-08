@@ -53,6 +53,13 @@ Class Api_db extends CI_MODEL
         return  1;
 	}
     
+    // actualiza onesignalid
+	public function updateOneSignalId($idUser, $oneSignalId){
+        $this->db->where('id', $idUser);
+        $this->db->update('user',  array('oneSignalId' => $oneSignalId));
+        return  1;
+	}
+    
     // obtiene la informacion del usuario
 	public function getAccount($id){
 		$this->db->select('user.name, user.fbid, user.signin, city.name as ciudad');
@@ -73,8 +80,8 @@ Class Api_db extends CI_MODEL
     // obtiene la informacion del usuario
 	public function getAccountCommerces($id){
         $this->db->select('commerce.id, commerce.name, commerce.description, commerce.image, xref_user_commerce.points');
-        $this->db->select('(select count(*) from reward where reward.idCommerce = commerce.id and reward.points <= xref_user_commerce.points) as avaliable', false);
-        $this->db->select('(select count(*) from reward where reward.idCommerce = commerce.id) as rewards', false);
+        $this->db->select('(select count(*) from reward where reward.idCommerce = commerce.id and reward.points <= xref_user_commerce.points and reward.status = 1) as avaliable', false);
+        $this->db->select('(select count(*) from reward where reward.idCommerce = commerce.id and reward.status = 1) as rewards', false);
         $this->db->select('(select count(*) from branch join log_user_checkin on branch.id = log_user_checkin.idBranch where log_user_checkin.idUser = xref_user_commerce.idUser and branch.idCommerce = commerce.id) as visits', false);
         $this->db->select('(select max(dateAction) from branch join log_user_checkin on branch.id = log_user_checkin.idBranch where log_user_checkin.idUser = xref_user_commerce.idUser and branch.idCommerce = commerce.id) as lastVisit', false);
         $this->db->from('xref_user_commerce');
@@ -196,7 +203,7 @@ Class Api_db extends CI_MODEL
     // obtiene el reward
 	public function getReward($idUser, $idReward){
 		$this->db->select('reward.id, reward.name, reward.description, reward.terms, reward.points');
-        $this->db->select('reward.vigency, reward.image, reward.idCommerce');
+        $this->db->select('reward.vigency, reward.image, reward.idCommerce, reward.status');
         $this->db->select('commerce.name as commerce, commerce.description as commerceDesc, commerce.image as comImage');
         $this->db->select('bg1 as colorA1, bg2 as colorA2, bg3 as colorA3');
         $this->db->select('bg1, bg2, bg3, font1, font2, font3');
@@ -345,7 +352,7 @@ Class Api_db extends CI_MODEL
     // obtiene los comercios destacados
 	public function getCommerce($idUser, $idCommerce){
         $this->db->select('commerce.id, commerce.name, commerce.description, commerce.detail');
-        $this->db->select('commerce.image, commerce.banner, commerce.web, commerce.facebook, commerce.twitter');
+        $this->db->select('commerce.image, commerce.banner, commerce.web, commerce.facebook, commerce.twitter, commerce.email');
         $this->db->select('bg1 as colorA1, bg2 as colorA2, bg3 as colorA3');
         $this->db->select('bg1, bg2, bg3, font1, font2, font3');
         $this->db->select('xref_user_commerce.points as points');
@@ -366,9 +373,14 @@ Class Api_db extends CI_MODEL
 
     // obtiene los comercios destacados
 	public function getCommerceBranchCity($idCommerce, $idCity){
+        $this->db->select('branch.id, branch.name, branch.address, branch.phone');
+        $this->db->select("branch.lat, branch.long, concat(city.name, ', ', states.name) as city", false);
         $this->db->from('branch');
+        $this->db->join('city', 'branch.idCity = city.id');
+        $this->db->join('states', 'city.idState = states.id');
         $this->db->where('idCommerce', $idCommerce);
-        $this->db->where('idCity', $idCity);
+        $this->db->where('branch.idCity', $idCity);
+        $this->db->where('branch.status = 1');
         return $this->db->get()->result();
 	}
 
@@ -445,14 +457,24 @@ Class Api_db extends CI_MODEL
     
     // obtiene los rewards con fav
 	public function getWallet($idUser){
-		$this->db->select('reward.id, reward.name, reward.image');
+		$this->db->select('reward.id, reward.name, reward.image, reward.vigency');
         $this->db->select('xref_user_wallet.dateReden, xref_user_wallet.status');
-		$this->db->select('commerce.name as commerce');
+		$this->db->select('commerce.name as commerce, commerce.image as logo');
         $this->db->from('xref_user_wallet');
         $this->db->join('reward', 'xref_user_wallet.idReward = reward.id and xref_user_wallet.idUser = '.$idUser, 'left');
         $this->db->join('commerce', 'reward.idCommerce = commerce.id ');
         $this->db->where('commerce.status = 1');
-        $this->db->order_by("xref_user_wallet.status, xref_user_wallet.dateReden", "asc");
+        $this->db->where('xref_user_wallet.status < 3');
+        $this->db->order_by("xref_user_wallet.dateReden", "desc");
+        return  $this->db->get()->result();
+	}
+    
+    //  verifica si ya fue redimido
+	public function isGiftRedem($idUser, $idReward){
+		$this->db->select('status');
+        $this->db->from('xref_user_wallet');
+        $this->db->where('idUser', $idUser);
+        $this->db->where('idReward', $idReward);
         return  $this->db->get()->result();
 	}
     
@@ -483,38 +505,32 @@ Class Api_db extends CI_MODEL
         return  $this->db->get()->result();
 	}
 
-    /**------------------------------ MESSAGES ------------------------------**/
+    /**------------------------------ MESSAGES SEGMENTADOS ------------------------------**/
 
     // obtiene los rewards con fav
-	public function getMessages($idUser){
-		$this->db->select('message.id, message.dateIncome, message.status');
-        $this->db->select("ifnull(reward.name, message.name) as name", false);
-        $this->db->select('commerce.name as commerce, commerce.image, user.fbid');
-        $this->db->select('user.name as user');
-        $this->db->from('message');
-        $this->db->join('commerce', 'message.fromCommerce = commerce.id', 'left');
-        $this->db->join('user', 'message.fromUser = user.id', 'left');
-        $this->db->join('reward', 'message.idReward = reward.id', 'left');
-        $this->db->where('message.status > 0');
-        $this->db->where('message.idUser', $idUser);
-        $this->db->order_by("message.status", "asc");
-        $this->db->order_by("message.dateIncome", "desc");
+	public function getMessagesSeg($idUser){
+		$this->db->select('xref_message_user.id, xref_message_user.status, commerce.name as commerce');
+        $this->db->select('xref_message_user.created as dateIncome, seg_message.name, commerce.image');
+        $this->db->from('xref_message_user');
+        $this->db->join('seg_message', 'xref_message_user.idSegMessage = seg_message.id', 'left');
+        $this->db->join('commerce', 'seg_message.idCommerce = commerce.id', 'left');
+        $this->db->where('xref_message_user.status > 0');
+        $this->db->where('xref_message_user.idUser', $idUser);
+        //$this->db->order_by("message.status", "asc");
+        $this->db->order_by("xref_message_user.created", "desc");
         return  $this->db->get()->result();
 	}
 
     // obtiene los rewards con fav
-	public function getMessage($idMessage){
-        $this->db->select('message.id, message.dateIncome, message.status');
-        $this->db->select("ifnull(reward.name, message.name) as name", false);
-        $this->db->select("ifnull(reward.image, message.image) as image", false);
-        $this->db->select("ifnull(reward.description, message.description) as description", false);
-        $this->db->select('commerce.name as commerce');
-        $this->db->select('user.name as user');
-        $this->db->from('message');
-        $this->db->join('commerce', 'message.fromCommerce = commerce.id', 'left');
-        $this->db->join('user', 'message.fromUser = user.id', 'left');
-        $this->db->join('reward', 'message.idReward = reward.id', 'left');
-        $this->db->where('message.id', $idMessage);
+	public function getMessageSeg($idMessage){
+        $this->db->select('xref_message_user.id, xref_message_user.status, commerce.name as commerce');
+        $this->db->select('xref_message_user.created as dateIncome, seg_message.name, seg_message.image');
+        $this->db->select('seg_message.description, seg_message.idReward, commerce.image as imagecom');
+        $this->db->from('xref_message_user');
+        $this->db->join('seg_message', 'xref_message_user.idSegMessage = seg_message.id', 'left');
+        $this->db->join('commerce', 'seg_message.idCommerce = commerce.id', 'left');
+        $this->db->where('xref_message_user.id', $idMessage);
+        $this->db->group_by('seg_message.id'); 
         return  $this->db->get()->result();
 	}
 
