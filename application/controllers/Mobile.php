@@ -37,12 +37,21 @@ class Mobile extends REST_Controller {
         $idCity = $this->Api_db->getCity($this->get('idUser'))[0]->idCity;
         $items = $this->Api_db->getComHome($this->get('idUser'), $idCity);
         $wallet = $this->Api_db->countWallet($this->get('idUser'))[0]->total;
+        $message = $this->Api_db->countMessage($this->get('idUser'))[0]->total;
+        
+        // Determina si el usuario accedio hoy al app
+        $user = $this->Api_db->getUserApp($this->get('idUser'));
+        if (count($user) == 0){
+            $this->Api_db->insertUserApp(array('idUser' =>$this->get('idUser'), 'dateAction' => date("Y-m-d")));
+        }
+        
+        
         // Rewards
         foreach ($items as $item):
             $item->rewards  = $this->Api_db->getRewardsH($this->get('idUser'), $item->id);;
         endforeach;
         
-        $message = array('success' => true, 'wallet' => $wallet, 'items' => $items);
+        $message = array('success' => true, 'wallet' => $wallet, 'message' => $message, 'items' => $items);
         $this->response($message, 200);
     }
 
@@ -198,6 +207,37 @@ class Mobile extends REST_Controller {
         
         $message = array('success' => true, 'user' => $user);
         $this->response($message, 200);
+    }
+    
+    /**
+     * Obtiene la informacion del usuario
+     */
+    public function getProfile_get(){
+        $user = $this->Api_db->getProfile($this->get('idUser'))[0];
+        
+        // Split birthdate
+        if (isset($user->birthDate)) {
+            $user->birday = date('d', strtotime($user->birthDate));
+            $user->birmonth = date('n', strtotime($user->birthDate));
+            $user->biryear = date('Y', strtotime($user->birthDate));
+        }
+        
+        // Formatos fecha
+        $months = array('', 'Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic');
+        $user->signin = date('d', strtotime($user->signin)) . '/' . $months[date('n', strtotime($user->signin))] . '/' . date('Y', strtotime($user->signin));
+        
+        $message = array('success' => true, 'user' => $user);
+        $this->response($message, 200);
+    }
+    
+    /**
+     * Update Profile
+     */
+    public function updateProfile_get(){
+        // Update Profile
+        $toUpdate = array('email' => $this->get('email'), 'phone' => $this->get('phone'), 'gender' => $this->get('gender'), 'birthDate' => $this->get('birthDate'));
+        $user = $this->Api_db->updateProfile($this->get('idUser'), $toUpdate);
+        $this->response(array('success' => true), 200);
     }
     
     /**
@@ -522,6 +562,15 @@ class Mobile extends REST_Controller {
     }
 
     /**------------------------------ MESSAGES SEG ------------------------------**/
+    
+    /**
+     * Actualiza estatus message
+     */
+    public function setReadMessage_get(){
+        $this->Api_db->setStatusMessage($this->get('idMessage'), array('status' => 2));
+        $message = array('success' => true);
+        $this->response($message, 200);
+    }
     
     /**
      * Obtiene las recompensas

@@ -32,6 +32,21 @@ Class Api_db extends CI_MODEL
         return  $this->db->get()->result();
 	}
     
+    // Determina si el usuario accedio hoy al app
+	public function getUserApp($idUser){
+		$this->db->select('idUser');
+        $this->db->from('log_user_app');
+        $this->db->where('idUser', $idUser);
+        $this->db->where('dateAction = CURDATE()');
+        return  $this->db->get()->result();
+	}
+    
+    // Determina si el usuario accedio hoy al app
+	public function insertUserApp($data){
+        $this->db->insert('log_user_app', $data);
+        return  1;
+    }
+    
     /**------------------------------ USER ------------------------------**/
     
     // registra el usuario
@@ -67,6 +82,23 @@ Class Api_db extends CI_MODEL
         $this->db->join('city', 'user.idCity = city.id ');
         $this->db->where('user.id', $id);
         return  $this->db->get()->result();
+	}
+    
+    // obtiene la informacion del usuario
+	public function getProfile($id){
+		$this->db->select('user.name, user.fbid, user.signin, city.name as ciudad');
+		$this->db->select('user.email, user.phone, user.gender, user.birthDate');
+        $this->db->from('user');
+        $this->db->join('city', 'user.idCity = city.id ');
+        $this->db->where('user.id', $id);
+        return  $this->db->get()->result();
+	}
+    
+    // Update Profile
+	public function updateProfile($idUser, $data){
+        $this->db->where('id', $idUser);
+        $this->db->update('user',  $data);
+        return  1;
 	}
     
     // obtiene la informacion del usuario
@@ -183,6 +215,7 @@ Class Api_db extends CI_MODEL
         }
         $this->db->where('reward.status = 1');
         $this->db->where('commerce.status = 1');
+        $this->db->group_by('reward.id'); 
         return  $this->db->get()->result();
 	}
 
@@ -506,6 +539,22 @@ Class Api_db extends CI_MODEL
 	}
 
     /**------------------------------ MESSAGES SEGMENTADOS ------------------------------**/
+    
+    // actualiza estatus gift
+	public function setStatusMessage($idMessage, $data){
+        $this->db->where('id', $idMessage);
+        $this->db->update('xref_message_user', $data);
+        return  1;
+	}
+    
+    // cuenta numero de mensajes nuevos
+	public function countMessage($idUser){
+        $this->db->select('count(*) as total', false);
+        $this->db->from('xref_message_user');
+        $this->db->where('idUser', $idUser);
+        $this->db->where('status', 1);
+        return  $this->db->get()->result();
+    }
 
     // obtiene los rewards con fav
 	public function getMessagesSeg($idUser){

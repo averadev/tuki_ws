@@ -105,7 +105,7 @@ Class Commerce_db extends CI_MODEL
 	public function getRedemRewards($idBranch){
         $this->db->select('redemption.id, redemption.dateChange, redemption.dateRedemption');
         $this->db->select('redemption.dateCancelation, redemption.status');
-        $this->db->select('reward.name as reward, reward.points, reward.description, user.name as user');
+        $this->db->select('reward.name as reward, reward.points, reward.description, user.name as user, user.fbid');
         $this->db->from('redemption');
         $this->db->join('reward', 'redemption.idReward = reward.id', 'left');
         $this->db->join('user', 'redemption.idUser = user.id', 'left');
