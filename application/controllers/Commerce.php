@@ -286,7 +286,69 @@ class Commerce extends REST_Controller {
         $this->response($response, 200);
     }
     
-    
+    /**
+     * Actualiza puntos
+     */
+    public function updPts_get(){
+        $response = array();
+        $newPoints = 0;
+        $idQR = $this->get('qr');
+        
+        // Validar Cajero
+        $user = $this->Commerce_db->isCashier($idQR);
+        if (count($user) >0){
+            $user = $this->Commerce_db->isCashierBranch($idQR, $this->get('idBranch'));
+            if (count($user) > 0){
+                $response = $this->response(array('success' => true, 'cashier' => $user[0]), 200);
+            }else{
+                $response = $this->response(array('success' => false, 'cashier' => 1), 200);
+            }
+        }else{
+            
+            // Validar LinkCard
+            $user = $this->Commerce_db->isLinkCard($idQR);
+            if (count($user) > 0){
+                $idQR = $user[0]->idUser;
+            }
+            
+            // Validar Usuario
+            $isNew = false;
+            $user = $this->Commerce_db->isUser($idQR, $this->get('idCommerce'));
+            if (count($user) == 0){
+                $isNew = true;
+                $this->Commerce_db->insertUser(array( 'id' => $idQR, 'idCity' => 1, 'status' => 1 ));
+                $user = $this->Commerce_db->isUser($idQR, $this->get('idCommerce'));
+            }
+            
+            // Calcular puntos
+            $newPoints = intval( intval($this->get('val')) / 10 );
+            
+            // Validar Usuario-Commercio
+            $user = $this->Commerce_db->isUserCommerce($idQR, $this->get('idCommerce'));
+            if (count($user) == 0){
+                $this->Commerce_db->insertUserCommerce(array( 'idUser' => $idQR,  'idCommerce' => $this->get('idCommerce'), 'points' => $newPoints ));
+                $this->Commerce_db->setUserPoints($idQR, $this->get('idCommerce'), array('points' => $newPoints));
+                $this->Commerce_db->logNewUserCom(array( 'idUser' => $idQR, 'idCommerce' => $this->get('idCommerce') ));
+                $this->Commerce_db->logCheckin(array( 'idUser' => $idQR, 'points' => $newPoints, 'ticket' => $this->get('ticket'), 'idBranch' => $this->get('idBranch') ));
+            }else{
+                $user = $user[0];
+                if ($user->numhours == null || $user->numhours >= 2){
+                    $user->points = $user->points + $newPoints;
+                    $this->Commerce_db->setUserPoints($idQR, $this->get('idCommerce'), array('points' => $user->points));
+                    $this->Commerce_db->logCheckin(array( 'idUser' => $idQR, 'points' => $newPoints, 'ticket' => $this->get('ticket'), 'idBranch' => $this->get('idBranch') ));
+                }else{
+                    $newPoints = 0;
+                }
+            }
+            
+            // Obtener Usuario-Commercio
+            $user = $this->Commerce_db->userPoints($idQR, $this->get('idCommerce'));
+            $user[0]->newPoints = $newPoints;
+            $response = $this->response(array('success' => true, 'newUser' => $isNew, 'user' => $user[0]), 200);
+        }
+        
+        $this->response($response, 200);
+    }
     
     /**
      * Validamos QR Reward
