@@ -33,11 +33,11 @@ Class Api_db extends CI_MODEL
 	}
     
     // Determina si el usuario accedio hoy al app
-	public function getUserApp($idUser){
+	public function getUserApp($idUser, $curDate){
 		$this->db->select('idUser');
         $this->db->from('log_user_app');
         $this->db->where('idUser', $idUser);
-        $this->db->where('dateAction = CURDATE()');
+        $this->db->where('dateAction', $curDate);
         return  $this->db->get()->result();
 	}
     

@@ -40,7 +40,7 @@ class Mobile extends REST_Controller {
         $message = $this->Api_db->countMessage($this->get('idUser'))[0]->total;
         
         // Determina si el usuario accedio hoy al app
-        $user = $this->Api_db->getUserApp($this->get('idUser'));
+        $user = $this->Api_db->getUserApp($this->get('idUser'), date("Y-m-d"));
         if (count($user) == 0){
             $this->Api_db->insertUserApp(array('idUser' =>$this->get('idUser'), 'dateAction' => date("Y-m-d")));
         }
