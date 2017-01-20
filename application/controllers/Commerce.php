@@ -203,6 +203,7 @@ class Commerce extends REST_Controller {
      * Obtiene las recompensas
      */
     public function getRedenciones_get(){
+        $schema = $this->Commerce_db->getSchema($this->get('idBranch'))[0]->squema;
         $redemptions = $this->Commerce_db->getRedemRewards($this->get('idBranch'));
         // Fecha Vigencia
         $months = array('', 'Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre');
@@ -210,7 +211,7 @@ class Commerce extends REST_Controller {
             $item->dateTexto = date('d', strtotime($item->dateChange)) . ' de ' . 
                 $months[date('n', strtotime($item->dateChange))].' '.date('h:i', strtotime($item->dateChange));
         endforeach;
-        $this->response(array('success' => true, 'items' => $redemptions), 200);
+        $this->response(array('success' => true, 'schema' => $schema, 'items' => $redemptions), 200);
     }
     
     /**

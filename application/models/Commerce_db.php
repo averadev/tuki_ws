@@ -257,6 +257,15 @@ Class Commerce_db extends CI_MODEL
         return  $this->db->get()->result();
 	}
     
+    // obtiene el esquema de la sucursal
+	public function getSchema($idBranch){
+        $this->db->select('commerce.squema');
+        $this->db->from('branch');
+        $this->db->join('commerce', 'branch.idCommerce = commerce.id');
+        $this->db->where('branch.id', $idBranch);
+        return  $this->db->get()->result();
+	}
+    
     // verifica si es un regalo
 	public function isGift($idReward){
         $this->db->from('reward');
