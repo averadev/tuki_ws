@@ -196,7 +196,12 @@ class Commerce extends REST_Controller {
     public function getRewards_get(){
         $logo = $this->Commerce_db->getlogo($this->get('idCommerce'));
         $rewards = $this->Commerce_db->getRewards($this->get('idCommerce'));
-        $this->response(array('success' => true, 'logo' => $logo, 'items' => $rewards), 200);
+        $checkEmp = '';
+        if ($this->get('idBranch')){
+            $checkEmp = $this->Commerce_db->getCheckEmp($this->get('idBranch'))[0];
+        }
+            
+        $this->response(array('success' => true, 'checkEmp' => $checkEmp, 'logo' => $logo, 'items' => $rewards), 200);
     }
     
 	/**
@@ -212,6 +217,27 @@ class Commerce extends REST_Controller {
                 $months[date('n', strtotime($item->dateChange))].' '.date('h:i', strtotime($item->dateChange));
         endforeach;
         $this->response(array('success' => true, 'schema' => $schema, 'items' => $redemptions), 200);
+    }
+    
+    /**
+     * Verificamos Empleado
+     */
+    public function checkEmp_get(){
+        $response = array('success' => false);
+        $user = $this->Commerce_db->isCashier($this->get('qr'));
+        if (count($user) > 0){
+            $user = $this->Commerce_db->isCashierBranch($this->get('qr'), $this->get('idBranch'));
+            if (count($user) > 0){
+                if ($user[0]->id != intval($this->get('lastEmp'))){
+                    $this->Commerce_db->logBranchComUser(array('idComUser' => $user[0]->id, 'idBranch' => $this->get('idBranch')));
+                    $this->Commerce_db->setCheckEmp($this->get('idBranch'), array('currentEmp' => $user[0]->id));
+                }
+                $response = array('success' => true, 'item' => $user[0]);
+            }else{
+                $response = array('success' => true);
+            }
+        }                               
+        $this->response($response, 200);
     }
     
     /**
@@ -233,6 +259,7 @@ class Commerce extends REST_Controller {
         $response = array();
         $newPoints = 0;
         $idQR = $this->get('qr');
+        $schema = $this->Commerce_db->getSchema($this->get('idBranch'))[0]->squema;
         
         // Validar Cajero
         $user = $this->Commerce_db->isCashier($idQR);
@@ -263,14 +290,20 @@ class Commerce extends REST_Controller {
             // Validar Usuario-Commercio
             $user = $this->Commerce_db->isUserCommerce($idQR, $this->get('idCommerce'));
             if (count($user) == 0){
-                $newPoints = 10;
-                $this->Commerce_db->insertUserCommerce(array( 'idUser' => $idQR,  'idCommerce' => $this->get('idCommerce'), 'points' => '10' ));
-                $this->Commerce_db->setUserPoints($idQR, $this->get('idCommerce'), array('points' => 10));
-                $this->Commerce_db->logNewUserCom(array( 'idUser' => $idQR, 'idCommerce' => $this->get('idCommerce') ));
-                $this->Commerce_db->logCheckin(array( 'idUser' => $idQR, 'points' => 10, 'idBranch' => $this->get('idBranch') ));
+                if ($schema == 1){
+                    $newPoints = 10;
+                    $this->Commerce_db->insertUserCommerce(array( 'idUser' => $idQR,  'idCommerce' => $this->get('idCommerce'), 'points' => '10' ));
+                    $this->Commerce_db->setUserPoints($idQR, $this->get('idCommerce'), array('points' => 10));
+                    $this->Commerce_db->logNewUserCom(array( 'idUser' => $idQR, 'idCommerce' => $this->get('idCommerce') ));
+                    $this->Commerce_db->logCheckin(array( 'idUser' => $idQR, 'points' => 10, 'idBranch' => $this->get('idBranch') ));
+                }else{
+                    $this->Commerce_db->insertUserCommerce(array( 'idUser' => $idQR,  'idCommerce' => $this->get('idCommerce'), 'points' => '10' ));
+                    $this->Commerce_db->setUserPoints($idQR, $this->get('idCommerce'), array('points' => 0));
+                    $this->Commerce_db->logNewUserCom(array( 'idUser' => $idQR, 'idCommerce' => $this->get('idCommerce') ));
+                }
             }else{
                 $user = $user[0];
-                if ($user->numhours == null || $user->numhours >= 6){ //6){
+                if (($user->numhours == null || $user->numhours >= 6) && $schema == 1){ //6){
                     $newPoints = 10;
                     $user->points = $user->points + 10;
                     $this->Commerce_db->setUserPoints($idQR, $this->get('idCommerce'), array('points' => $user->points));

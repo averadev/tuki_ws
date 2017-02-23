@@ -33,6 +33,7 @@ Class Commerce_db extends CI_MODEL
         $this->db->where('user.id = '.$idUser);
         return  $this->db->get()->result();
 	}
+    
     // registra el usuario
 	public function logNewUserCom($data){
         $this->db->insert('log_new_user_commerce', $data);
@@ -205,7 +206,7 @@ Class Commerce_db extends CI_MODEL
     
     // obtiene el usuario
 	public function isCashierBranch($idUser, $idBranch){
-        $this->db->select('cashier.id, commerce_user.nombre');
+        $this->db->select('commerce_user.id, commerce_user.nombre');
         $this->db->from('cashier');
         $this->db->join('commerce_user', 'cashier.idComUser = commerce_user.id');
         $this->db->where('cashier.idCard', $idUser);
@@ -288,6 +289,27 @@ Class Commerce_db extends CI_MODEL
         $this->db->where('idUser', $idUser);
         $this->db->where('idReward', $idReward);
         $this->db->update('xref_user_wallet', array('status' => $status));
+	}
+    
+    // obtiene empleado a cargo
+	public function getCheckEmp($idBranch){
+        $this->db->select("commerce_user.id, ifnull(commerce_user.nombre, '') as nombre", false);
+        $this->db->from('branch');
+        $this->db->join('commerce_user', 'branch.currentEmp = commerce_user.id', 'left');
+        $this->db->where('branch.id', $idBranch);
+        return  $this->db->get()->result();
+	}
+    
+    // deshabilita regalo del usuario
+	public function setCheckEmp($idBranch, $data){
+        $this->db->where('id', $idBranch);
+        $this->db->update('branch', $data);
+	}
+    
+    // registra nuevo cajero a cargo
+	public function logBranchComUser($data){
+        $this->db->insert('log_branch_comuser', $data);
+        return  1;
 	}
 
 }

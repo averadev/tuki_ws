@@ -54,6 +54,22 @@ class Mobile extends REST_Controller {
         $message = array('success' => true, 'wallet' => $wallet, 'message' => $message, 'items' => $items);
         $this->response($message, 200);
     }
+    
+    /**
+     * Obtiene el comercio por id
+     */
+    public function getHomeRewardsGPS_get(){
+        $idCity = $this->Api_db->getCity($this->get('idUser'))[0]->idCity;
+        $items = $this->Api_db->getComHome($this->get('idUser'), $idCity);
+        
+        // Rewards
+        foreach ($items as $item):
+            $item->rewards  = $this->Api_db->getRewardsH($this->get('idUser'), $item->id);;
+        endforeach;
+        
+        $message = array('success' => true, 'items' => $items);
+        $this->response($message, 200);
+    }
 
     /**
      * Obtiene los puntos del usuario

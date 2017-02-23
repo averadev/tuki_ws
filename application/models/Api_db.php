@@ -245,7 +245,7 @@ Class Api_db extends CI_MODEL
         $this->db->join('commerce', 'reward.idCommerce = commerce.id ');
         $this->db->join('xref_user_reward_fav', 'reward.id = xref_user_reward_fav.idReward and xref_user_reward_fav.idUser = '.$idUser, 'left');
         $this->db->join('xref_user_commerce', 'reward.idCommerce = xref_user_commerce.idCommerce and xref_user_commerce.idUser = '.$idUser, 'left');
-        $this->db->join('palette', 'commerce.idPalette = palette.id ');
+        $this->db->join('palette', 'commerce.idPalette = palette.id ', 'left');
         $this->db->where('reward.id', $idReward);
         return  $this->db->get()->result();
 	}
@@ -263,7 +263,7 @@ Class Api_db extends CI_MODEL
             $this->db->from('branch');
             $this->db->join('commerce', 'branch.idCommerce = commerce.id and idCity = '.$idCity);
         }
-        $this->db->join('palette', 'commerce.idPalette = palette.id ');
+        $this->db->join('palette', 'commerce.idPalette = palette.id ', 'left');
         $this->db->where('commerce.important = 1');
         $this->db->where('commerce.status = 1');
         $this->db->group_by('commerce.id'); 
@@ -278,7 +278,7 @@ Class Api_db extends CI_MODEL
         $this->db->select('xref_user_commerce.points as afil');
         $this->db->from('branch');
         $this->db->join('commerce', 'branch.idCommerce = commerce.id and idCity = '.$idCity);
-        $this->db->join('palette', 'commerce.idPalette = palette.id ');
+        $this->db->join('palette', 'commerce.idPalette = palette.id ', 'left');
         $this->db->join('xref_user_commerce', 'commerce.id = xref_user_commerce.idCommerce  and xref_user_commerce.idUser = '.$idUser, 'left');
         if ($filters != '1'){
             $this->db->join('xref_commerce_categories', 'commerce.id = xref_commerce_categories.idCommerce  and xref_commerce_categories.idCategory in ( '.$filters.' )');
@@ -295,7 +295,7 @@ Class Api_db extends CI_MODEL
         $this->db->select('bg1 as colorA1, bg2 as colorA2, bg3 as colorA3');
         $this->db->select('bg1, bg2, bg3, font1, font2, font3');
         $this->db->from('commerce');
-        $this->db->join('palette', 'commerce.idPalette = palette.id ');
+        $this->db->join('palette', 'commerce.idPalette = palette.id ', 'left');
         $this->db->where('commerce.status = 1');
         //$this->db->where('(commerce.lat > '.$lat1.' AND commerce.lat < '.$lat2.')', '', false);
         //$this->db->where('(commerce.long > '.$lon1.' AND commerce.long < '.$lon2.')', '', false);
@@ -323,7 +323,7 @@ Class Api_db extends CI_MODEL
         $this->db->select('bg1 as colorA1, bg2 as colorA2, bg3 as colorA3');
         $this->db->select('bg1, bg2, bg3, font1, font2, font3');
         $this->db->from('commerce');
-        $this->db->join('palette', 'commerce.idPalette = palette.id ');
+        $this->db->join('palette', 'commerce.idPalette = palette.id ', 'left');
         if ($filters != '1'){
             $this->db->join('xref_commerce_categories', 'commerce.id = xref_commerce_categories.idCommerce  and xref_commerce_categories.idCategory in ( '.$filters.' )');
         }
@@ -342,7 +342,7 @@ Class Api_db extends CI_MODEL
         $this->db->select('(select count(*) from reward where reward.idCommerce = commerce.id and reward.status = 1) as rewards', false);
         $this->db->select('(select count(*) from reward where reward.idCommerce = commerce.id and reward.points <= xref_user_commerce.points and reward.status = 1) as posible', false);
         $this->db->from('commerce');
-        $this->db->join('palette', 'commerce.idPalette = palette.id ');
+        $this->db->join('palette', 'commerce.idPalette = palette.id ', 'left');
         $this->db->join('xref_user_commerce', 'commerce.id = xref_user_commerce.idCommerce  and xref_user_commerce.idUser = '.$idUser);
         if ($filters != '1'){
             $this->db->join('xref_commerce_categories', 'commerce.id = xref_commerce_categories.idCommerce  and xref_commerce_categories.idCategory in ( '.$filters.' )');
@@ -360,7 +360,7 @@ Class Api_db extends CI_MODEL
         $this->db->select('bg1, bg2, bg3, font1, font2, font3');
         $this->db->from('branch');
         $this->db->join('commerce', 'branch.idCommerce = commerce.id and idCity = '.$idCity);
-        $this->db->join('palette', 'commerce.idPalette = palette.id ');
+        $this->db->join('palette', 'commerce.idPalette = palette.id ', 'left');
         $this->db->join('xref_user_commerce', 'commerce.id = xref_user_commerce.idCommerce  and xref_user_commerce.idUser = '.$idUser, 'left');
         $this->db->where('commerce.status = 1');
         $this->db->group_by('commerce.id'); 
@@ -395,7 +395,7 @@ Class Api_db extends CI_MODEL
         $this->db->select('(select count(*) from branch join log_user_checkin on branch.id = log_user_checkin.idBranch where log_user_checkin.idUser = xref_user_commerce.idUser and branch.idCommerce = commerce.id) as visits', false);
         $this->db->select('(select max(dateAction) from branch join log_user_checkin on branch.id = log_user_checkin.idBranch where log_user_checkin.idUser = xref_user_commerce.idUser and branch.idCommerce = commerce.id) as lastVisit', false);
         $this->db->from('commerce');
-        $this->db->join('palette', 'commerce.idPalette = palette.id ');
+        $this->db->join('palette', 'commerce.idPalette = palette.id ', 'left');
         $this->db->join('xref_user_commerce', 'commerce.id = xref_user_commerce.idCommerce  and xref_user_commerce.idUser = '.$idUser, 'left');
         $this->db->join('xref_user_commerce_fav', 'commerce.id = xref_user_commerce_fav.idCommerce and xref_user_commerce_fav.idUser = '.$idUser, 'left');
         $this->db->where('commerce.status = 1');
