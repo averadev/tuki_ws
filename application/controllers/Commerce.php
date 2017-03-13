@@ -260,6 +260,11 @@ class Commerce extends REST_Controller {
         $newPoints = 0;
         $idQR = $this->get('qr');
         $schema = $this->Commerce_db->getSchema($this->get('idBranch'))[0]->squema;
+        // Validamos Cajero Logueado
+        $idComUser = 0;
+        if ($this->get('idCheckEmp')){
+            $idComUser = intval($this->get('idCheckEmp'));
+        }
         
         // Validar Cajero
         $user = $this->Commerce_db->isCashier($idQR);
@@ -294,12 +299,12 @@ class Commerce extends REST_Controller {
                     $newPoints = 10;
                     $this->Commerce_db->insertUserCommerce(array( 'idUser' => $idQR,  'idCommerce' => $this->get('idCommerce'), 'points' => '10' ));
                     $this->Commerce_db->setUserPoints($idQR, $this->get('idCommerce'), array('points' => 10));
-                    $this->Commerce_db->logNewUserCom(array( 'idUser' => $idQR, 'idCommerce' => $this->get('idCommerce') ));
-                    $this->Commerce_db->logCheckin(array( 'idUser' => $idQR, 'points' => 10, 'idBranch' => $this->get('idBranch') ));
+                    $this->Commerce_db->logNewUserCom(array( 'idUser' => $idQR, 'idCommerce' => $this->get('idCommerce'), 'idComUser' => $idComUser ));
+                    $this->Commerce_db->logCheckin(array( 'idUser' => $idQR, 'points' => 10, 'idBranch' => $this->get('idBranch'), 'idComUser' => $idComUser ));
                 }else{
                     $this->Commerce_db->insertUserCommerce(array( 'idUser' => $idQR,  'idCommerce' => $this->get('idCommerce'), 'points' => '10' ));
                     $this->Commerce_db->setUserPoints($idQR, $this->get('idCommerce'), array('points' => 0));
-                    $this->Commerce_db->logNewUserCom(array( 'idUser' => $idQR, 'idCommerce' => $this->get('idCommerce') ));
+                    $this->Commerce_db->logNewUserCom(array( 'idUser' => $idQR, 'idCommerce' => $this->get('idCommerce'), 'idComUser' => $idComUser ));
                 }
             }else{
                 $user = $user[0];
@@ -307,7 +312,7 @@ class Commerce extends REST_Controller {
                     $newPoints = 10;
                     $user->points = $user->points + 10;
                     $this->Commerce_db->setUserPoints($idQR, $this->get('idCommerce'), array('points' => $user->points));
-                    $this->Commerce_db->logCheckin(array( 'idUser' => $idQR, 'points' => 10, 'idBranch' => $this->get('idBranch') ));
+                    $this->Commerce_db->logCheckin(array( 'idUser' => $idQR, 'points' => 10, 'idBranch' => $this->get('idBranch'), 'idComUser' => $idComUser ));
                 }
             }
             
@@ -327,6 +332,11 @@ class Commerce extends REST_Controller {
         $response = array();
         $newPoints = 0;
         $idQR = $this->get('qr');
+        // Validamos Cajero Logueado
+        $idComUser = 0;
+        if ($this->get('idCheckEmp')){
+            $idComUser = intval($this->get('idCheckEmp'));
+        }
         
         // Validar Cajero
         $user = $this->Commerce_db->isCashier($idQR);
@@ -362,14 +372,14 @@ class Commerce extends REST_Controller {
             if (count($user) == 0){
                 $this->Commerce_db->insertUserCommerce(array( 'idUser' => $idQR,  'idCommerce' => $this->get('idCommerce'), 'points' => $newPoints ));
                 $this->Commerce_db->setUserPoints($idQR, $this->get('idCommerce'), array('points' => $newPoints));
-                $this->Commerce_db->logNewUserCom(array( 'idUser' => $idQR, 'idCommerce' => $this->get('idCommerce') ));
-                $this->Commerce_db->logCheckin(array( 'idUser' => $idQR, 'points' => $newPoints, 'ticket' => $this->get('ticket'), 'idBranch' => $this->get('idBranch') ));
+                $this->Commerce_db->logNewUserCom(array( 'idUser' => $idQR, 'idCommerce' => $this->get('idCommerce'), 'idComUser' => $idComUser ));
+                $this->Commerce_db->logCheckin(array( 'idUser' => $idQR, 'points' => $newPoints, 'ticket' => $this->get('ticket'), 'idBranch' => $this->get('idBranch'), 'idComUser' => $idComUser ));
             }else{
                 $user = $user[0];
                 if ($user->numhours == null || $user->numhours >= 2){
                     $user->points = $user->points + $newPoints;
                     $this->Commerce_db->setUserPoints($idQR, $this->get('idCommerce'), array('points' => $user->points));
-                    $this->Commerce_db->logCheckin(array( 'idUser' => $idQR, 'points' => $newPoints, 'ticket' => $this->get('ticket'), 'idBranch' => $this->get('idBranch') ));
+                    $this->Commerce_db->logCheckin(array( 'idUser' => $idQR, 'points' => $newPoints, 'ticket' => $this->get('ticket'), 'idBranch' => $this->get('idBranch'), 'idComUser' => $idComUser ));
                 }else{
                     $newPoints = 0;
                 }
@@ -424,6 +434,11 @@ class Commerce extends REST_Controller {
             if (count($gift) > 0){
                 $this->Commerce_db->changeGift($this->get('idUser'), $this->get('idReward'), 3);
             }
+            // Validamos Cajero Logueado
+            $idComUser = 0;
+            if ($this->get('idCheckEmp')){
+                $idComUser = intval($this->get('idCheckEmp'));
+            }
             
             // Insert data
             $user = $this->Commerce_db->insertRedemption(array(
@@ -433,6 +448,7 @@ class Commerce extends REST_Controller {
                 'idCashier' => 1,
                 'dateChange' => date('y-m-d h:i:s'),
                 'points' => intval($this->get('points')),
+                'idComUser' => $idComUser,
                 'status' => 1));
         }
         $this->response(array('success' => true), 200);
