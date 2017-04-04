@@ -45,7 +45,6 @@ class Mobile extends REST_Controller {
             $this->Api_db->insertUserApp(array('idUser' =>$this->get('idUser'), 'dateAction' => date("Y-m-d")));
         }
         
-        
         // Rewards
         foreach ($items as $item):
             $item->rewards  = $this->Api_db->getRewardsH($this->get('idUser'), $item->id);;
@@ -60,14 +59,36 @@ class Mobile extends REST_Controller {
      */
     public function getHomeRewardsGPS_get(){
         $idCity = $this->Api_db->getCity($this->get('idUser'))[0]->idCity;
-        $items = $this->Api_db->getComHome($this->get('idUser'), $idCity);
+        $items = $this->Api_db->getBranchGPS($this->get('idUser'), $idCity);
+        $wallet = $this->Api_db->countWallet($this->get('idUser'))[0]->total;
+        $message = $this->Api_db->countMessage($this->get('idUser'))[0]->total;
+        
+        // Calculate distance
+        foreach ($items as $item):
+            $item->distance = $this->haversineGreatCircleDistance($this->get('lat'), $this->get('long'), $item->lat, $item->long);
+            $item->km  = number_format($item->distance/1000, 1, '.', '').'km';
+        endforeach;
+        
+        // Order by distance
+        usort($items, function($a, $b){
+            return strcmp($a->distance, $b->distance);
+        });
+        
+        // Agrupa por id
+        $items = $this->DeDupeArrayOfObjectsByProps($items, ['id'] );
+        
+        // Determina si el usuario accedio hoy al app
+        $user = $this->Api_db->getUserApp($this->get('idUser'), date("Y-m-d"));
+        if (count($user) == 0){
+            $this->Api_db->insertUserApp(array('idUser' =>$this->get('idUser'), 'dateAction' => date("Y-m-d")));
+        }
         
         // Rewards
         foreach ($items as $item):
             $item->rewards  = $this->Api_db->getRewardsH($this->get('idUser'), $item->id);;
         endforeach;
         
-        $message = array('success' => true, 'items' => $items);
+        $message = array('success' => true, 'wallet' => $wallet, 'message' => $message, 'items' => $items);
         $this->response($message, 200);
     }
 
@@ -230,6 +251,7 @@ class Mobile extends REST_Controller {
      */
     public function getProfile_get(){
         $user = $this->Api_db->getProfile($this->get('idUser'))[0];
+        $cities = $this->Api_db->getCities($this->get('idUser'), '');
         
         // Split birthdate
         if (isset($user->birthDate)) {
@@ -242,7 +264,7 @@ class Mobile extends REST_Controller {
         $months = array('', 'Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic');
         $user->signin = date('d', strtotime($user->signin)) . '/' . $months[date('n', strtotime($user->signin))] . '/' . date('Y', strtotime($user->signin));
         
-        $message = array('success' => true, 'user' => $user);
+        $message = array('success' => true, 'user' => $user, 'cities' => $cities);
         $this->response($message, 200);
     }
     
@@ -251,7 +273,17 @@ class Mobile extends REST_Controller {
      */
     public function updateProfile_get(){
         // Update Profile
-        $toUpdate = array('email' => $this->get('email'), 'phone' => $this->get('phone'), 'gender' => $this->get('gender'), 'birthDate' => $this->get('birthDate'));
+        $toUpdate = array('email' => $this->get('email'), 'phone' => $this->get('phone'));
+        if ($this->get('gender')){
+            $toUpdate['gender'] = $this->get('gender');
+        }
+        if ($this->get('birthDate')){
+            $toUpdate['birthDate'] = $this->get('birthDate');
+        }
+        if ($this->get('idCity')){
+            $toUpdate['idCity'] = $this->get('idCity');
+        }
+        
         $user = $this->Api_db->updateProfile($this->get('idUser'), $toUpdate);
         $this->response(array('success' => true), 200);
     }
@@ -447,6 +479,30 @@ class Mobile extends REST_Controller {
         $lon2 = str_replace(',', '.', $this->get('longitude') + .1);
         
         $items = $this->Api_db->getCommercesByGPSLite($lat1, $lat2, $lon1, $lon2);
+        $message = array('success' => true, 'items' => $items);
+        $this->response($message, 200);
+    }
+
+    /**
+     * Obtiene los comercios
+     */
+    public function getCommercesWList_get(){
+        $items = $this->Api_db->getCommercesWList($this->get('idCity'));
+        
+        // Calculate distance
+        foreach ($items as $item):
+            $item->distance = $this->haversineGreatCircleDistance($this->get('lat'), $this->get('long'), $item->lat, $item->long);
+            $item->km  = number_format($item->distance/1000, 1, '.', '').'km';
+        endforeach;
+        
+        // Order by distance
+        usort($items, function($a, $b){
+            return strcmp($a->distance, $b->distance);
+        });
+        
+        // Agrupa por id
+        $items = $this->DeDupeArrayOfObjectsByProps($items, ['id'] );
+        
         $message = array('success' => true, 'items' => $items);
         $this->response($message, 200);
     }
@@ -800,6 +856,95 @@ class Mobile extends REST_Controller {
         }
 
         return $counter;
+    }
+    
+    /**
+     * Calculates the great-circle distance between two points, with
+     * the Haversine formula.
+     */
+    function haversineGreatCircleDistance(
+      $latitudeFrom, $longitudeFrom, $latitudeTo, $longitudeTo, $earthRadius = 6371000)
+    {
+      // convert from degrees to radians
+      $latFrom = deg2rad($latitudeFrom);
+      $lonFrom = deg2rad($longitudeFrom);
+      $latTo = deg2rad($latitudeTo);
+      $lonTo = deg2rad($longitudeTo);
+
+      $latDelta = $latTo - $latFrom;
+      $lonDelta = $lonTo - $lonFrom;
+
+      $angle = 2 * asin(sqrt(pow(sin($latDelta / 2), 2) +
+        cos($latFrom) * cos($latTo) * pow(sin($lonDelta / 2), 2)));
+      return intval(($angle * $earthRadius));
+    }
+    
+    /**
+     * Function to sort an array by a specific key. Maintains index association.
+     */
+    function array_sort($array, $on, $order=SORT_ASC){
+        $new_array = array();
+        $sortable_array = array();
+
+        if (count($array) > 0) {
+            foreach ($array as $k => $v) {
+                if (is_array($v)) {
+                    foreach ($v as $k2 => $v2) {
+                        if ($k2 == $on) {
+                            $sortable_array[$k] = $v2;
+                        }
+                    }
+                } else {
+                    $sortable_array[$k] = $v;
+                }
+            }
+
+            switch ($order) {
+                case SORT_ASC:
+                    asort($sortable_array);
+                break;
+                case SORT_DESC:
+                    arsort($sortable_array);
+                break;
+            }
+
+            foreach ($sortable_array as $k => $v) {
+                $new_array[$k] = $array[$k];
+            }
+        }
+        return $new_array;
+    }
+    
+    /**
+     * Iterates over the array of objects and looks for matching property values.
+     * If a match is found the later object is removed from the array, which is returned
+     * @param array $objects    The objects to iterate over
+     * @param array $props      Array of the properties to dedupe on.
+     *   If more than one property is specified then all properties must match for it to be deduped.
+     * @return array
+     */
+    public function DeDupeArrayOfObjectsByProps($objects, $props) {
+        if (empty($objects) || empty($props))
+            return $objects;
+        $results = array();
+        foreach ($objects as $object) {
+            $matched = false;
+            foreach ($results as $result) {
+                $matchs = 0;
+                foreach ($props as $prop) {
+                    if ($object->$prop == $result->$prop)
+                        $matchs++;
+                }
+                if ($matchs == count($props)) {
+                    $matched = true;
+                    break;
+                }
+
+            }
+            if (!$matched)
+                $results[] = $object;
+        }
+        return $results;
     }
 
 

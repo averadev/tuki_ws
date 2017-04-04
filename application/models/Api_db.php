@@ -87,7 +87,7 @@ Class Api_db extends CI_MODEL
     // obtiene la informacion del usuario
 	public function getProfile($id){
 		$this->db->select('user.name, user.fbid, user.signin, city.name as ciudad');
-		$this->db->select('user.email, user.phone, user.gender, user.birthDate');
+		$this->db->select('user.email, user.phone, user.gender, user.birthDate, city.id as idCity');
         $this->db->from('user');
         $this->db->join('city', 'user.idCity = city.id ');
         $this->db->where('user.id', $id);
@@ -318,6 +318,17 @@ Class Api_db extends CI_MODEL
 	}
 
     // obtiene los comercios
+	public function getCommercesWList($idCity){
+        $this->db->select('commerce.id, commerce.name, commerce.description, commerce.image');
+        $this->db->select('branch.address, branch.lat, branch.long');
+        $this->db->from('branch');
+        $this->db->join('commerce', 'branch.idCommerce = commerce.id and idCity = '.$idCity);
+        $this->db->where('commerce.status = 1');
+        $this->db->order_by("commerce.name", "asc");
+        return  $this->db->get()->result();
+	}
+
+    // obtiene los comercios
 	public function getCommercesWCat($filters){
         $this->db->select('commerce.id, commerce.name, commerce.description, commerce.image');
         $this->db->select('bg1 as colorA1, bg2 as colorA2, bg3 as colorA3');
@@ -364,6 +375,20 @@ Class Api_db extends CI_MODEL
         $this->db->join('xref_user_commerce', 'commerce.id = xref_user_commerce.idCommerce  and xref_user_commerce.idUser = '.$idUser, 'left');
         $this->db->where('commerce.status = 1');
         $this->db->group_by('commerce.id'); 
+        $this->db->order_by("commerce.name", "asc");
+        return  $this->db->get()->result();
+	}
+    
+    
+    
+    // obtiene los comercios afiliados
+	public function getBranchGPS($idUser, $idCity){
+        $this->db->select('commerce.id, commerce.image, commerce.name, commerce.description, xref_user_commerce.points');
+        $this->db->select('lat, long');
+        $this->db->from('branch');
+        $this->db->join('commerce', 'branch.idCommerce = commerce.id and idCity = '.$idCity);
+        $this->db->join('xref_user_commerce', 'commerce.id = xref_user_commerce.idCommerce  and xref_user_commerce.idUser = '.$idUser, 'left');
+        $this->db->where('commerce.status = 1');
         $this->db->order_by("commerce.name", "asc");
         return  $this->db->get()->result();
 	}

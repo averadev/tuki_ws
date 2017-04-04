@@ -267,6 +267,14 @@ Class Commerce_db extends CI_MODEL
         return  $this->db->get()->result();
 	}
     
+    // obtiene la ciudad de la sucursal
+	public function getBranchCity($idBranch){
+        $this->db->select('branch.idCity');
+        $this->db->from('branch');
+        $this->db->where('branch.id', $idBranch);
+        return  $this->db->get()->result();
+	}
+    
     // verifica si es un regalo
 	public function isGift($idReward){
         $this->db->from('reward');

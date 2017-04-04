@@ -288,7 +288,8 @@ class Commerce extends REST_Controller {
             $user = $this->Commerce_db->isUser($idQR, $this->get('idCommerce'));
             if (count($user) == 0){
                 $isNew = true;
-                $this->Commerce_db->insertUser(array( 'id' => $idQR, 'idCity' => 1, 'status' => 1 ));
+                $idCity = $this->Commerce_db->getBranchCity($this->get('idBranch'))[0]->idCity;
+                $this->Commerce_db->insertUser(array( 'id' => $idQR, 'idCity' => $idCity, 'status' => 1 ));
                 $user = $this->Commerce_db->isUser($idQR, $this->get('idCommerce'));
             }
             
@@ -360,7 +361,8 @@ class Commerce extends REST_Controller {
             $user = $this->Commerce_db->isUser($idQR, $this->get('idCommerce'));
             if (count($user) == 0){
                 $isNew = true;
-                $this->Commerce_db->insertUser(array( 'id' => $idQR, 'idCity' => 1, 'status' => 1 ));
+                $idCity = $this->Commerce_db->getBranchCity($this->get('idBranch'))[0]->idCity;
+                $this->Commerce_db->insertUser(array( 'id' => $idQR, 'idCity' => $idCity, 'status' => 1 ));
                 $user = $this->Commerce_db->isUser($idQR, $this->get('idCommerce'));
             }
             
