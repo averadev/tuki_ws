@@ -273,7 +273,18 @@ class Mobile extends REST_Controller {
      */
     public function updateProfile_get(){
         // Update Profile
-        $toUpdate = array('email' => $this->get('email'), 'phone' => $this->get('phone'));
+        $email = $this->get('email');
+        if ($email == '-'){
+            $email = '';
+        }
+        $phone = $this->get('phone');
+        if ($phone == '-'){
+            $phone = '';
+        }
+        
+        // Init array
+        $toUpdate = array('email' => $email, 'phone' => $phone);
+        
         if ($this->get('gender')){
             $toUpdate['gender'] = $this->get('gender');
         }

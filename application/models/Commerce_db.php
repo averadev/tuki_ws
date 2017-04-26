@@ -319,6 +319,12 @@ Class Commerce_db extends CI_MODEL
         $this->db->insert('log_branch_comuser', $data);
         return  1;
 	}
+    
+    // registra nuevo cajero a cargo
+	public function logBranchDevice($data){
+        $this->db->insert('log_branch_device', $data);
+        return  1;
+	}
 
 }
 //end model

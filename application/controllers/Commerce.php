@@ -483,8 +483,28 @@ class Commerce extends REST_Controller {
     }
     
     
+    /**
+     * Actualiza varios canjes
+     */
+    public function setMultiRedemption_get(){
+        // Actualiza info
+        $ids = explode("-", $this->get('ids'));
+        foreach ($ids as $id): 
+            $this->Commerce_db->updateRedemption($id, array( 'status' => 3, 'idCashier' => $this->get('idCashier'), 'dateCancelation' => date('y-m-d h:i:s')));
+        endforeach; 
+        
+        $this->response(array('success' => true), 200);
+    }
     
     
+    /**
+     * Obtiene las recompensas
+     */
+    public function logBranchDevice_get(){
+        // Insert
+        $this->Commerce_db->logBranchDevice(array( 'idBranch' => $this->get('idBranch'), 'deviceID' => $this->get('deviceID') ));
+        $this->response(array('success' => true), 200);
+    }
     
     
     
