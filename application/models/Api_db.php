@@ -415,8 +415,8 @@ Class Api_db extends CI_MODEL
         $this->db->select('bg1, bg2, bg3, font1, font2, font3');
         $this->db->select('xref_user_commerce.points as points');
         $this->db->select('xref_user_commerce_fav.idCommerce as fav');
-        $this->db->select('(select count(*) from reward where reward.idCommerce = commerce.id and reward.points <= xref_user_commerce.points) as avaliable', false);
-        $this->db->select('(select count(*) from reward where reward.idCommerce = commerce.id) as rewards', false);
+        $this->db->select('(select count(*) from reward where reward.idCommerce = commerce.id and reward.points <= xref_user_commerce.points and reward.status = 1) as avaliable', false);
+        $this->db->select('(select count(*) from reward where reward.idCommerce = commerce.id and reward.status = 1) as rewards', false);
         $this->db->select('(select count(*) from branch join log_user_checkin on branch.id = log_user_checkin.idBranch where log_user_checkin.idUser = xref_user_commerce.idUser and branch.idCommerce = commerce.id) as visits', false);
         $this->db->select('(select max(dateAction) from branch join log_user_checkin on branch.id = log_user_checkin.idBranch where log_user_checkin.idUser = xref_user_commerce.idUser and branch.idCommerce = commerce.id) as lastVisit', false);
         $this->db->from('commerce');
