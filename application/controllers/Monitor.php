@@ -20,37 +20,46 @@ class Monitor extends REST_Controller {
      * Consulta la informacion
      */
     public function getData_get(){
-        // Set date
-        $date = date("Y-m-").'01';
-        if ($this->get('range') == '1M'){    
+        // Set date and grouptype
+        $date = '';
+        $range = $this->get('range');
+        if ($this->get('range') == '1S'){   
+            $date = date("Y-m-d", strtotime('monday this week'));
+        }elseif ($this->get('range') == '1M'){    
             $date = date("Y-m-").'01';
-        
-        }elseif ($this->get('range') == '3M'){    
+        }elseif ($this->get('range') == '3M'){
             $date = date('Y-m-d', strtotime(date("Y-m-").'01 -2 months'));
-            echo $date;
+        }else{ 
+            $date = '2016-01-01';
         }
         
         // Afiliaciones
-        $newUserD = $this->Monitor_db->getNewUser($this->get('idCommerce'), $date);
-        $newUser = $this->Monitor_db->getNewUserT_1M($this->get('idCommerce'), $date)[0];
-        $newUser->goal = 1250; 
+        $newUserD = $this->Monitor_db->getNewUser($this->get('idCommerce'), $date, $range);
+        $newUser = $this->Monitor_db->getNewUserT_1M($this->get('idCommerce'), $date, $range)[0];
+        if ($this->get('range') == '1S' || $this->get('range') == '1M'){ 
+            $newUser->goal = 1250; 
+        }
         
         // Puntos Otorgados
-        $pointsD = $this->Monitor_db->getPoints($this->get('idCommerce'), $date);
-        $points = $this->Monitor_db->getPointsT_1M($this->get('idCommerce'), $date)[0];
-        $points->goal = 12000; 
+        $pointsD = $this->Monitor_db->getPoints($this->get('idCommerce'), $date, $range);
+        $points = $this->Monitor_db->getPointsT_1M($this->get('idCommerce'), $date, $range)[0];
+        if ($this->get('range') == '1S' || $this->get('range') == '1M'){ 
+            $points->goal = 12500; 
+        }
         
         // Redenciones
-        $redemD = $this->Monitor_db->getRedem($this->get('idCommerce'), $date);
-        $redem = $this->Monitor_db->getRedemT_1M($this->get('idCommerce'), $date)[0];
-        $redem->goal = 1000; 
+        $redemD = $this->Monitor_db->getRedem($this->get('idCommerce'), $date, $range);
+        $redem = $this->Monitor_db->getRedemT_1M($this->get('idCommerce'), $date, $range)[0];
+        if ($this->get('range') == '1S' || $this->get('range') == '1M'){ 
+            $redem->goal = 1250; 
+        }
         
         // Retornamos valores
         $message = array('success' => true, 
                          'newUser' => $newUser, 'newUserD' => $newUserD, 
                          'points' => $points, 'pointsD' => $pointsD, 
                          'redem' => $redem, 'redemD' => $redemD);
-        //$this->response($message, 200);
+        $this->response($message, 200);
     }
 
 
