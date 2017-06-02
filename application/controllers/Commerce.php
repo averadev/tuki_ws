@@ -490,7 +490,7 @@ class Commerce extends REST_Controller {
         // Actualiza info
         $ids = explode("-", $this->get('ids'));
         foreach ($ids as $id): 
-            $this->Commerce_db->updateRedemption($id, array( 'status' => 3, 'idCashier' => $this->get('idCashier'), 'dateCancelation' => date('y-m-d h:i:s')));
+            $this->Commerce_db->updateRedemption($id, array( 'status' => 2, 'idCashier' => $this->get('idCashier'), 'dateRedemption' => date('y-m-d h:i:s')));
         endforeach; 
         
         $this->response(array('success' => true), 200);
