@@ -300,12 +300,12 @@ class Commerce extends REST_Controller {
                     $newPoints = 10;
                     $this->Commerce_db->insertUserCommerce(array( 'idUser' => $idQR,  'idCommerce' => $this->get('idCommerce'), 'points' => '10' ));
                     $this->Commerce_db->setUserPoints($idQR, $this->get('idCommerce'), array('points' => 10));
-                    $this->Commerce_db->logNewUserCom(array( 'idUser' => $idQR, 'idCommerce' => $this->get('idCommerce'), 'idComUser' => $idComUser ));
+                    $this->Commerce_db->logNewUserCom(array( 'idUser' => $idQR, 'idCommerce' => $this->get('idCommerce'), 'idBranch' => $this->get('idBranch'), 'idComUser' => $idComUser ));
                     $this->Commerce_db->logCheckin(array( 'idUser' => $idQR, 'points' => 10, 'idBranch' => $this->get('idBranch'), 'idComUser' => $idComUser ));
                 }else{
                     $this->Commerce_db->insertUserCommerce(array( 'idUser' => $idQR,  'idCommerce' => $this->get('idCommerce'), 'points' => '10' ));
                     $this->Commerce_db->setUserPoints($idQR, $this->get('idCommerce'), array('points' => 0));
-                    $this->Commerce_db->logNewUserCom(array( 'idUser' => $idQR, 'idCommerce' => $this->get('idCommerce'), 'idComUser' => $idComUser ));
+                    $this->Commerce_db->logNewUserCom(array( 'idUser' => $idQR, 'idCommerce' => $this->get('idCommerce'), 'idBranch' => $this->get('idBranch'), 'idComUser' => $idComUser ));
                 }
             }else{
                 $user = $user[0];
@@ -374,7 +374,7 @@ class Commerce extends REST_Controller {
             if (count($user) == 0){
                 $this->Commerce_db->insertUserCommerce(array( 'idUser' => $idQR,  'idCommerce' => $this->get('idCommerce'), 'points' => $newPoints ));
                 $this->Commerce_db->setUserPoints($idQR, $this->get('idCommerce'), array('points' => $newPoints));
-                $this->Commerce_db->logNewUserCom(array( 'idUser' => $idQR, 'idCommerce' => $this->get('idCommerce'), 'idComUser' => $idComUser ));
+                $this->Commerce_db->logNewUserCom(array( 'idUser' => $idQR, 'idCommerce' => $this->get('idCommerce'), 'idBranch' => $this->get('idBranch'), 'idComUser' => $idComUser ));
                 $this->Commerce_db->logCheckin(array( 'idUser' => $idQR, 'points' => $newPoints, 'ticket' => $this->get('ticket'), 'idBranch' => $this->get('idBranch'), 'idComUser' => $idComUser ));
             }else{
                 $user = $user[0];

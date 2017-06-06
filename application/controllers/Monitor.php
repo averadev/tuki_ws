@@ -34,6 +34,17 @@ class Monitor extends REST_Controller {
     }
     
     /**
+     * Consulta la lista de Sucursales
+     */
+    public function getBranchs_get(){
+        // Consultar sucursales
+        $items = $this->Monitor_db->getBranchs($this->get('idCommerce'));
+        // Se envia informacion
+        $message = array('success' => true, 'items' => $items);
+        $this->response($message, 200);
+    }
+    
+    /**
      * Consulta la informacion
      */
     public function getData_get(){
@@ -50,32 +61,57 @@ class Monitor extends REST_Controller {
             $date = '2016-01-01';
         }
         
-        // Afiliaciones
-        $newUserD = $this->Monitor_db->getNewUser($this->get('idCommerce'), $date, $range);
-        $newUser = $this->Monitor_db->getNewUserT_1M($this->get('idCommerce'), $date, $range)[0];
+        // Consultas por comercio
+        if ($this->get('idCommerce') > 0){
+            // Afiliaciones
+            $newUserD = $this->Monitor_db->getNewUser($this->get('idCommerce'), $date, $range);
+            $newUser = $this->Monitor_db->getNewUserT_1M($this->get('idCommerce'), $date, $range)[0];
+
+            // Puntos Otorgados
+            $pointsD = $this->Monitor_db->getPoints($this->get('idCommerce'), $date, $range);
+            $points = $this->Monitor_db->getPointsT_1M($this->get('idCommerce'), $date, $range)[0];
+
+            // Redenciones
+            $redemD = $this->Monitor_db->getRedem($this->get('idCommerce'), $date, $range);
+            $redem = $this->Monitor_db->getRedemT_1M($this->get('idCommerce'), $date, $range)[0];
         
-        // Puntos Otorgados
-        $pointsD = $this->Monitor_db->getPoints($this->get('idCommerce'), $date, $range);
-        $points = $this->Monitor_db->getPointsT_1M($this->get('idCommerce'), $date, $range)[0];
+        // Consultas por sucursal
+        }else{
+            // Afiliaciones
+            $newUserD = $this->Monitor_db->getBranchNewUser($this->get('idBranch'), $date, $range);
+            $newUser = $this->Monitor_db->getBranchNewUserT_1M($this->get('idBranch'), $date, $range)[0];
+
+            // Puntos Otorgados
+            $pointsD = $this->Monitor_db->getBranchPoints($this->get('idBranch'), $date, $range);
+            $points = $this->Monitor_db->getBranchPointsT_1M($this->get('idBranch'), $date, $range)[0];
+
+            // Redenciones
+            $redemD = $this->Monitor_db->getBranchRedem($this->get('idBranch'), $date, $range);
+            $redem = $this->Monitor_db->getBranchRedemT_1M($this->get('idBranch'), $date, $range)[0];
+        }
         
-        // Redenciones
-        $redemD = $this->Monitor_db->getRedem($this->get('idCommerce'), $date, $range);
-        $redem = $this->Monitor_db->getRedemT_1M($this->get('idCommerce'), $date, $range)[0];
         
         // Metas
         if ($this->get('range') == '1S' || $this->get('range') == '1M'){ 
-            $goalCom = $this->Monitor_db->getGoalCommerce($this->get('idCommerce')); 
+            if ($this->get('idCommerce') > 0){
+                // Metas por comercio
+                $goals = $this->Monitor_db->getGoalCommerce($this->get('idCommerce')); 
+            }else{
+                // Metas por sucursal
+                $goals = $this->Monitor_db->getGoalBranch($this->get('idBranch')); 
+            }
+            
             // Semanales
-            if ($this->get('range') == '1S' && count($goalCom) > 0){ 
-                $newUser->goal = $goalCom[0]->weekNewUser; 
-                $points->goal = $goalCom[0]->weekPoints; 
-                $redem->goal = $goalCom[0]->weekRedem; 
+            if ($this->get('range') == '1S' && count($goals) > 0){ 
+                $newUser->goal = $goals[0]->weekNewUser; 
+                $points->goal = $goals[0]->weekPoints; 
+                $redem->goal = $goals[0]->weekRedem; 
             } 
             // Mensuales
-            if ($this->get('range') == '1M' && count($goalCom) > 0){ 
-                $newUser->goal = $goalCom[0]->monthNewUser; 
-                $points->goal = $goalCom[0]->monthPoints; 
-                $redem->goal = $goalCom[0]->monthRedem; 
+            if ($this->get('range') == '1M' && count($goals) > 0){ 
+                $newUser->goal = $goals[0]->monthNewUser; 
+                $points->goal = $goals[0]->monthPoints; 
+                $redem->goal = $goals[0]->monthRedem; 
             }
         }
         
