@@ -201,6 +201,7 @@ Class Commerce_db extends CI_MODEL
         $this->db->select('cashier.id');
         $this->db->from('cashier');
         $this->db->where('cashier.idCard', $idUser);
+        $this->db->where('status = 1');
         return  $this->db->get()->result();
 	}
     
@@ -211,6 +212,7 @@ Class Commerce_db extends CI_MODEL
         $this->db->join('commerce_user', 'cashier.idComUser = commerce_user.id');
         $this->db->where('cashier.idCard', $idUser);
         $this->db->where('commerce_user.idBranch', $idBranch);
+        $this->db->where('cashier.status = 1');
         return  $this->db->get()->result();
 	}
     
