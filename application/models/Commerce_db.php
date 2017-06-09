@@ -40,6 +40,23 @@ Class Commerce_db extends CI_MODEL
         return  1;
 	}
     
+    // obtiene el usuario
+	public function getNewUserCom($idUser, $idCommerce){
+        $this->db->select('idBranch');
+        $this->db->from('log_new_user_commerce');
+        $this->db->where('idUser', $idUser);
+        $this->db->where('idCommerce', $idCommerce);
+        return  $this->db->get()->result();
+	}
+    
+    // actuliza la sucursal
+	public function updateNewUserBranch($idUser, $idCommerce, $data){
+        $this->db->where('idUser', $idUser);
+        $this->db->where('idCommerce', $idCommerce);
+        $this->db->update('log_new_user_commerce', $data);
+        return  1;
+	}
+    
     // actualiza el usuario
 	public function updateUser($id, $data){
         $this->db->where('id', $id);

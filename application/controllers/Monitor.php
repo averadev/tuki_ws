@@ -62,7 +62,7 @@ class Monitor extends REST_Controller {
         }
         
         // Consultas por comercio
-        if ($this->get('idCommerce') > 0){
+        if ($this->get('idBranch') == null){
             // Afiliaciones
             $newUserD = $this->Monitor_db->getNewUser($this->get('idCommerce'), $date, $range);
             $newUser = $this->Monitor_db->getNewUserT_1M($this->get('idCommerce'), $date, $range)[0];
@@ -80,6 +80,7 @@ class Monitor extends REST_Controller {
             // Afiliaciones
             $newUserD = $this->Monitor_db->getBranchNewUser($this->get('idBranch'), $date, $range);
             $newUser = $this->Monitor_db->getBranchNewUserT_1M($this->get('idBranch'), $date, $range)[0];
+            $newUser->pending = $this->Monitor_db->getPendingBranchNewUser($this->get('idCommerce'), $this->get('idBranch'), $date, $range)[0]->total;
 
             // Puntos Otorgados
             $pointsD = $this->Monitor_db->getBranchPoints($this->get('idBranch'), $date, $range);
@@ -130,7 +131,7 @@ class Monitor extends REST_Controller {
         }
         
         // Retornamos valores
-        $message = array('success' => true, 
+        $message = array('success' => true,
                          'newUser' => $newUser, 'newUserD' => $newUserD, 
                          'points' => $points, 'pointsD' => $pointsD, 
                          'redem' => $redem, 'redemD' => $redemD);

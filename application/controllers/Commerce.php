@@ -315,6 +315,13 @@ class Commerce extends REST_Controller {
                     $this->Commerce_db->setUserPoints($idQR, $this->get('idCommerce'), array('points' => $user->points));
                     $this->Commerce_db->logCheckin(array( 'idUser' => $idQR, 'points' => 10, 'idBranch' => $this->get('idBranch'), 'idComUser' => $idComUser ));
                 }
+                // Validar branch afiliado
+                $userCom = $this->Commerce_db->getNewUserCom($idQR, $this->get('idCommerce'));
+                if (count($userCom) > 0){
+                    if ($userCom[0]->idBranch == null){
+                        $this->Commerce_db->updateNewUserBranch($idQR, $this->get('idCommerce'), array('idBranch' => $this->get('idBranch')));
+                    }
+                }
             }
             
             // Obtener Usuario-Commercio
@@ -384,6 +391,14 @@ class Commerce extends REST_Controller {
                     $this->Commerce_db->logCheckin(array( 'idUser' => $idQR, 'points' => $newPoints, 'ticket' => $this->get('ticket'), 'idBranch' => $this->get('idBranch'), 'idComUser' => $idComUser ));
                 }else{
                     $newPoints = 0;
+                }
+                
+                // Validar branch afiliado
+                $userCom = $this->Commerce_db->getNewUserCom($idQR, $this->get('idCommerce'));
+                if (count($userCom) > 0){
+                    if ($userCom[0]->idBranch == null){
+                        $this->Commerce_db->updateNewUserBranch($idQR, $this->get('idCommerce'), array('idBranch' => $this->get('idBranch')));
+                    }
                 }
             }
             

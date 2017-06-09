@@ -204,6 +204,16 @@ Class Monitor_db extends CI_MODEL
         return  $this->db->get()->result();
 	}
     
+    // obtiene totales sobre los nuevos usuarios
+	public function getPendingBranchNewUser($idCommerce, $idBranch, $date, $range){
+        $this->db->select("count(*) as total", false);
+        $this->db->from('log_new_user_commerce');
+        $this->db->where('idBranch is null');
+        $this->db->where('idCommerce', $idCommerce);
+        $this->db->where('log_new_user_commerce.dateAction >=', $date);
+        return  $this->db->get()->result();
+	}
+    
     // obtiene totales sobre los puntos otorgados
 	public function getBranchPointsT_1M($idBranch, $date, $range){
         if ($range == '1S' ){
@@ -255,9 +265,12 @@ Class Monitor_db extends CI_MODEL
 
     // obtiene el usuario del comercio
 	public function getCommerceUser($email){
-        $this->db->select('commerce_user.id, commerce_user.nombre as name, commerce_user.password, commerce_user.idCommerce, commerce.name as comercio');
+        $this->db->select('commerce_user.id, commerce_user.nombre as name, commerce_user.password');
+        $this->db->select('commerce_user.idCommerce, commerce.name as comercio');
+        $this->db->select('commerce_user.idBranch, branch.name as branch');
         $this->db->from('commerce_user');
         $this->db->join('commerce', 'commerce_user.idCommerce = commerce.id');
+        $this->db->join('branch', 'commerce_user.idBranch = branch.id', 'left');
         $this->db->where('commerce_user.email', $email);
         return  $this->db->get()->result();
 	}
