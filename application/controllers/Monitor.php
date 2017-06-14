@@ -61,47 +61,26 @@ class Monitor extends REST_Controller {
             $date = '2016-01-01';
         }
         
-        // Consultas por comercio
-        if ($this->get('idBranch') == null){
-            // Afiliaciones
-            $newUserD = $this->Monitor_db->getNewUser($this->get('idCommerce'), $date, $range);
-            $newUser = $this->Monitor_db->getNewUserT_1M($this->get('idCommerce'), $date, $range)[0];
-
-            // Puntos Otorgados
-            $pointsD = $this->Monitor_db->getPoints($this->get('idCommerce'), $date, $range);
-            $points = $this->Monitor_db->getPointsT_1M($this->get('idCommerce'), $date, $range)[0];
-
-            // Redenciones
-            $redemD = $this->Monitor_db->getRedem($this->get('idCommerce'), $date, $range);
-            $redem = $this->Monitor_db->getRedemT_1M($this->get('idCommerce'), $date, $range)[0];
-        
-        // Consultas por sucursal
-        }else{
-            // Afiliaciones
-            $newUserD = $this->Monitor_db->getBranchNewUser($this->get('idBranch'), $date, $range);
-            $newUser = $this->Monitor_db->getBranchNewUserT_1M($this->get('idBranch'), $date, $range)[0];
-            $newUser->pending = $this->Monitor_db->getPendingBranchNewUser($this->get('idCommerce'), $this->get('idBranch'), $date, $range)[0]->total;
-
-            // Puntos Otorgados
-            $pointsD = $this->Monitor_db->getBranchPoints($this->get('idBranch'), $date, $range);
-            $points = $this->Monitor_db->getBranchPointsT_1M($this->get('idBranch'), $date, $range)[0];
-
-            // Redenciones
-            $redemD = $this->Monitor_db->getBranchRedem($this->get('idBranch'), $date, $range);
-            $redem = $this->Monitor_db->getBranchRedemT_1M($this->get('idBranch'), $date, $range)[0];
+        // idBranch
+        $idBranch = $this->get('idBranch');
+        if ($idBranch == null){
+            $idBranch = $this->Monitor_db->getCommerceBranchs($this->get('idCommerce'))[0]->idBranch;
         }
         
+        // Afiliaciones
+        $newUserD = $this->Monitor_db->getNewUserD($idBranch, $date, $range);
+        $newUser = $this->Monitor_db->getNewUser($idBranch, $date, $range)[0];
+        // Puntos Otorgados
+        $pointsD = $this->Monitor_db->getPointsD($idBranch, $date, $range);
+        $points = $this->Monitor_db->getPoints($idBranch, $date, $range)[0];
+        // Redenciones
+        $redemD = $this->Monitor_db->getRedemD($idBranch, $date, $range);
+        $redem = $this->Monitor_db->getRedem($idBranch, $date, $range)[0];
         
         // Metas
         if ($this->get('range') == '1S' || $this->get('range') == '1M'){ 
-            if ($this->get('idCommerce') > 0){
-                // Metas por comercio
-                $goals = $this->Monitor_db->getGoalCommerce($this->get('idCommerce')); 
-            }else{
-                // Metas por sucursal
-                $goals = $this->Monitor_db->getGoalBranch($this->get('idBranch')); 
-            }
-            
+            // Consultar metas
+            $goals = $this->Monitor_db->getGoals($idBranch); 
             // Semanales
             if ($this->get('range') == '1S' && count($goals) > 0){ 
                 $newUser->goal = $goals[0]->weekNewUser; 

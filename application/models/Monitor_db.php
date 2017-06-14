@@ -6,91 +6,120 @@ Class Monitor_db extends CI_MODEL
         parent::__construct();
     }
     
-    /**------------------------------ COMERCIO ------------------------------**/
+    /**------------------------------ DATOS POR FECHA ------------------------------**/
 
     // obtiene informacion de los nuevos usuarios
-	public function getNewUser($idCommerce, $date, $range){
-		$this->db->select("max(date_format(dateAction, '%d %b %Y')) as dateAction, count(idUser) as total", false);
+	public function getNewUserD($idBranchs, $date, $range){
+		$sql = "SELECT max(date_format(all_dates.dates, '%d %b %Y')) as dateAction, count(idUser) as total ";
         if ($range == '1S' ){
-            $this->db->select("weekday(log_new_user_commerce.dateAction) + 1 as weekday", false);
+            $sql = $sql.", weekday(all_dates.dates) + 1 as weekday ";
         }
-        $this->db->from('log_new_user_commerce');
-        $this->db->where('idCommerce', $idCommerce);
-        $this->db->where('log_new_user_commerce.dateAction >=', $date);        
-        // Group By
+        $sql = $sql."FROM all_dates ";
+        $sql = $sql."LEFT JOIN ( SELECT date(dateAction) as dateD, idUser, idBranch FROM log_user_checkin WHERE idBranch in (".$idBranchs.") GROUP BY idUser ) AS rangeD ON all_dates.dates = dateD ";
+        $sql = $sql."WHERE all_dates.dates >= '".$date."' and all_dates.dates <= current_date() ";
         if ($range == '3M'){
-            $this->db->group_by('week(log_new_user_commerce.dateAction)'); 
+            $sql = $sql."GROUP BY week(all_dates.dates) ";
         }elseif ($range == 'Todo'){
-            $this->db->group_by("concat(year(log_new_user_commerce.dateAction), month(log_new_user_commerce.dateAction))", FALSE); 
+            $sql = $sql."GROUP BY concat(year(all_dates.dates), month(all_dates.dates)) ";
         }else{
-            $this->db->group_by('day(log_new_user_commerce.dateAction)'); 
+            $sql = $sql."GROUP BY all_dates.dates ";
         }
-        $this->db->order_by('log_new_user_commerce.dateAction');
-        return  $this->db->get()->result();
+        $sql = $sql."ORDER BY all_dates.dates";
+        
+        $query = $this->db->query($sql);
+        return $query->result();
 	}
     
     // obtiene informacion de los puntos otorgados
-	public function getPoints($idCommerce, $date, $range){
-		$this->db->select("max(date_format(dateAction, '%d %b %Y')) as dateAction, sum(points) as total", false);
-        if ($range == '1S' ){
-            $this->db->select("weekday(log_user_checkin.dateAction) + 1 as weekday", false);
+	public function getPointsD($idBranch, $date, $range){
+		$this->db->select("ifnull(sum(points), 0) as total", false);
+        if ($range == '1S' || $range == '1M'){
+            if ($range == '1S' ){
+                $this->db->select("weekday(all_dates.dates) + 1 as weekday", false);
+            }
+            $this->db->select("max(date_format(all_dates.dates, '%d %b %Y')) as dateAction", false);
+            $this->db->from('all_dates');
+            $this->db->join('log_user_checkin', 'all_dates.dates = date(log_user_checkin.dateAction) and `idBranch` in ('.$idBranch.') ', 'left');
+            $this->db->where('all_dates.dates >=', $date);    
+            $this->db->where('all_dates.dates <= date(now())'); 
+        }else{
+            $this->db->select("max(date_format(log_user_checkin.dateAction, '%d %b %Y')) as dateAction", false);
+            $this->db->from('log_user_checkin');
+            $this->db->where('idBranch in ('.$idBranch.')');
+            $this->db->where('log_user_checkin.dateAction >=', $date);
         }
-        $this->db->from('log_user_checkin');
-        $this->db->join('branch', 'log_user_checkin.idBranch = branch.id');
-        $this->db->where('branch.idCommerce', $idCommerce);
-        $this->db->where('log_user_checkin.dateAction >=', $date);        
+               
         // Group By
         if ($range == '3M'){
             $this->db->group_by('week(log_user_checkin.dateAction)'); 
+            $this->db->order_by('log_user_checkin.dateAction');
         }elseif ($range == 'Todo'){
             $this->db->group_by("concat(year(log_user_checkin.dateAction), month(log_user_checkin.dateAction))", FALSE); 
+            $this->db->order_by('log_user_checkin.dateAction');
         }else{
-            $this->db->group_by('day(log_user_checkin.dateAction)'); 
+            $this->db->group_by('all_dates.dates'); 
+            $this->db->order_by('all_dates.dates');
         }
-        $this->db->order_by('log_user_checkin.dateAction');
         return  $this->db->get()->result();
 	}
     
     // obtiene informacion de las recompensas canjeadas
-	public function getRedem($idCommerce, $date, $range){
-		$this->db->select("max(date_format(dateChange, '%d %b %Y')) as dateAction, count(idUser) as total", false);
-        if ($range == '1S' ){
-            $this->db->select("weekday(dateChange) + 1 as weekday", false);
+	public function getRedemD($idBranch, $date, $range){
+		$this->db->select("count(idUser) as total", false);
+        if ($range == '1S' || $range == '1M'){
+            if ($range == '1S' ){
+                $this->db->select("weekday(all_dates.dates) + 1 as weekday", false);
+            }
+            $this->db->select("max(date_format(all_dates.dates, '%d %b %Y')) as dateAction", false);
+            $this->db->from('all_dates');
+            $this->db->join('redemption', 'all_dates.dates = date(dateChange) and idBranch in ('.$idBranch.') ', 'left');
+            $this->db->where('all_dates.dates >=', $date);    
+            $this->db->where('all_dates.dates <= date(now())');  
+        }else{
+            $this->db->select("max(date_format(dateChange, '%d %b %Y')) as dateAction", false);
+            $this->db->from('redemption');
+            $this->db->where('idBranch in ('.$idBranch.')');
+            $this->db->where('dateChange >=', $date); 
         }
-        $this->db->from('redemption');
-        $this->db->join('branch', 'redemption.idBranch = branch.id');
-        $this->db->where('branch.idCommerce', $idCommerce);
-        $this->db->where('dateChange >=', $date);
         $this->db->where('dateCancelation is null');        
+        
         // Group By
         if ($range == '3M'){
             $this->db->group_by('week(dateChange)'); 
+            $this->db->order_by('dateChange');
         }elseif ($range == 'Todo'){
             $this->db->group_by("concat(year(dateChange), month(dateChange))", FALSE); 
+            $this->db->order_by('dateChange');
         }else{
-            $this->db->group_by('day(dateChange)'); 
+            $this->db->group_by('all_dates.dates'); 
+            $this->db->order_by('all_dates.dates');
         }
-        $this->db->order_by('dateChange');
+        
         return  $this->db->get()->result();
 	}
     
+    /**------------------------------ TOTALES ------------------------------**/
+    
+    
     // obtiene totales sobre los nuevos usuarios
-	public function getNewUserT_1M($idCommerce, $date, $range){
+	public function getNewUser($idBranch, $date, $range){
+        $sql = "SELECT count(*) as total ";
         if ($range == '1S' ){
-            $this->db->select("count(*) as total, weekday(ifnull(max(dateAction),now())) + 1 as day, 7 as lastDay", false);
+            $sql = $sql.", weekday(now()) + 1 as day, 7 as lastDay ";
         }elseif ($range == '1M'){
-            $this->db->select("count(*) as total, day(now()) as day, day(last_day(now())) as lastDay", false);
-        }else{
-            $this->db->select("count(*) as total", false);
+            $sql = $sql.", day(now()) as day, day(last_day(now())) as lastDay ";
         }
-        $this->db->from('log_new_user_commerce');
-        $this->db->where('idCommerce', $idCommerce);
-        $this->db->where('log_new_user_commerce.dateAction >=', $date);
+        $sql = $sql."FROM ( SELECT date(dateAction) as dateD, idUser, idBranch FROM log_user_checkin WHERE idBranch in (".$idBranch.") GROUP BY idUser ) AS rangeD ";
+        $sql = $sql."WHERE dateD >= '".$date."'";
+        
+        $query = $this->db->query($sql);
+        return $query->result();
+        
         return  $this->db->get()->result();
 	}
     
     // obtiene totales sobre los puntos otorgados
-	public function getPointsT_1M($idCommerce, $date, $range){
+	public function getPoints($idBranch, $date, $range){
         if ($range == '1S' ){
             $this->db->select("ifnull(sum(points), 0) as total, weekday(ifnull(max(dateAction),now())) + 1 as day, 7 as lastDay", false);
         }elseif ($range == '1M'){
@@ -99,14 +128,13 @@ Class Monitor_db extends CI_MODEL
             $this->db->select("ifnull(sum(points), 0) as total", false);
         }
         $this->db->from('log_user_checkin');
-        $this->db->join('branch', 'log_user_checkin.idBranch = branch.id');
-        $this->db->where('branch.idCommerce', $idCommerce);
+        $this->db->where('idBranch in ('.$idBranch.')');
         $this->db->where('log_user_checkin.dateAction >=', $date);
         return  $this->db->get()->result();
 	}
     
     // obtiene totales sobre las recompensas canjeadas
-	public function getRedemT_1M($idCommerce, $date, $range){
+	public function getRedem($idBranch, $date, $range){
         if ($range == '1S' ){
             $this->db->select("count(*) as total, weekday(ifnull(max(dateChange),now())) + 1 as day, 7 as lastDay", false);
         }elseif ($range == '1M'){
@@ -115,131 +143,7 @@ Class Monitor_db extends CI_MODEL
             $this->db->select("count(*) as total", false);
         }
         $this->db->from('redemption');
-        $this->db->join('branch', 'redemption.idBranch = branch.id');
-        $this->db->where('branch.idCommerce', $idCommerce);
-        $this->db->where('dateChange >=', $date);
-        $this->db->where('dateCancelation is null');
-        return  $this->db->get()->result();
-	}
-    
-    /**------------------------------ SUCURSALES ------------------------------**/
-    
-    
-    // obtiene informacion de los nuevos usuarios
-	public function getBranchNewUser($idBranch, $date, $range){
-		$this->db->select("max(date_format(dateAction, '%d %b %Y')) as dateAction, count(idUser) as total", false);
-        if ($range == '1S' ){
-            $this->db->select("weekday(log_new_user_commerce.dateAction) + 1 as weekday", false);
-        }
-        $this->db->from('log_new_user_commerce');
-        $this->db->where('idBranch', $idBranch);
-        $this->db->where('log_new_user_commerce.dateAction >=', $date);        
-        // Group By
-        if ($range == '3M'){
-            $this->db->group_by('week(log_new_user_commerce.dateAction)'); 
-        }elseif ($range == 'Todo'){
-            $this->db->group_by("concat(year(log_new_user_commerce.dateAction), month(log_new_user_commerce.dateAction))", FALSE); 
-        }else{
-            $this->db->group_by('day(log_new_user_commerce.dateAction)'); 
-        }
-        $this->db->order_by('log_new_user_commerce.dateAction');
-        return  $this->db->get()->result();
-	}
-    
-    // obtiene informacion de los puntos otorgados
-	public function getBranchPoints($idBranch, $date, $range){
-		$this->db->select("max(date_format(dateAction, '%d %b %Y')) as dateAction, sum(points) as total", false);
-        if ($range == '1S' ){
-            $this->db->select("weekday(log_user_checkin.dateAction) + 1 as weekday", false);
-        }
-        $this->db->from('log_user_checkin');
-        $this->db->where('idBranch', $idBranch);
-        $this->db->where('log_user_checkin.dateAction >=', $date);        
-        // Group By
-        if ($range == '3M'){
-            $this->db->group_by('week(log_user_checkin.dateAction)'); 
-        }elseif ($range == 'Todo'){
-            $this->db->group_by("concat(year(log_user_checkin.dateAction), month(log_user_checkin.dateAction))", FALSE); 
-        }else{
-            $this->db->group_by('day(log_user_checkin.dateAction)'); 
-        }
-        $this->db->order_by('log_user_checkin.dateAction');
-        return  $this->db->get()->result();
-	}
-    
-    // obtiene informacion de las recompensas canjeadas
-	public function getBranchRedem($idBranch, $date, $range){
-		$this->db->select("max(date_format(dateChange, '%d %b %Y')) as dateAction, count(idUser) as total", false);
-        if ($range == '1S' ){
-            $this->db->select("weekday(dateChange) + 1 as weekday", false);
-        }
-        $this->db->from('redemption');
-        $this->db->where('idBranch', $idBranch);
-        $this->db->where('dateChange >=', $date);
-        $this->db->where('dateCancelation is null');        
-        // Group By
-        if ($range == '3M'){
-            $this->db->group_by('week(dateChange)'); 
-        }elseif ($range == 'Todo'){
-            $this->db->group_by("concat(year(dateChange), month(dateChange))", FALSE); 
-        }else{
-            $this->db->group_by('day(dateChange)'); 
-        }
-        $this->db->order_by('dateChange');
-        return  $this->db->get()->result();
-	}
-    
-    // obtiene totales sobre los nuevos usuarios
-	public function getBranchNewUserT_1M($idBranch, $date, $range){
-        if ($range == '1S' ){
-            $this->db->select("count(*) as total, weekday(ifnull(max(dateAction),now())) + 1 as day, 7 as lastDay", false);
-        }elseif ($range == '1M'){
-            $this->db->select("count(*) as total, day(now()) as day, day(last_day(now())) as lastDay", false);
-        }else{
-            $this->db->select("count(*) as total", false);
-        }
-        $this->db->from('log_new_user_commerce');
-        $this->db->where('idBranch', $idBranch);
-        $this->db->where('log_new_user_commerce.dateAction >=', $date);
-        return  $this->db->get()->result();
-	}
-    
-    // obtiene totales sobre los nuevos usuarios
-	public function getPendingBranchNewUser($idCommerce, $idBranch, $date, $range){
-        $this->db->select("count(*) as total", false);
-        $this->db->from('log_new_user_commerce');
-        $this->db->where('idBranch is null');
-        $this->db->where('idCommerce', $idCommerce);
-        $this->db->where('log_new_user_commerce.dateAction >=', $date);
-        return  $this->db->get()->result();
-	}
-    
-    // obtiene totales sobre los puntos otorgados
-	public function getBranchPointsT_1M($idBranch, $date, $range){
-        if ($range == '1S' ){
-            $this->db->select("ifnull(sum(points), 0) as total, weekday(ifnull(max(dateAction),now())) + 1 as day, 7 as lastDay", false);
-        }elseif ($range == '1M'){
-            $this->db->select("ifnull(sum(points), 0) as total, day(now()) as day, day(last_day(now())) as lastDay", false);
-        }else{
-            $this->db->select("ifnull(sum(points), 0) as total", false);
-        }
-        $this->db->from('log_user_checkin');
-        $this->db->where('idBranch', $idBranch);
-        $this->db->where('log_user_checkin.dateAction >=', $date);
-        return  $this->db->get()->result();
-	}
-    
-    // obtiene totales sobre las recompensas canjeadas
-	public function getBranchRedemT_1M($idBranch, $date, $range){
-        if ($range == '1S' ){
-            $this->db->select("count(*) as total, weekday(ifnull(max(dateChange),now())) + 1 as day, 7 as lastDay", false);
-        }elseif ($range == '1M'){
-            $this->db->select("count(*) as total, day(now()) as day, day(last_day(now())) as lastDay", false);
-        }else{
-            $this->db->select("count(*) as total", false);
-        }
-        $this->db->from('redemption');
-        $this->db->where('idBranch', $idBranch);
+        $this->db->where('idBranch in ('.$idBranch.')');
         $this->db->where('dateChange >=', $date);
         $this->db->where('dateCancelation is null');
         return  $this->db->get()->result();
@@ -249,17 +153,13 @@ Class Monitor_db extends CI_MODEL
     
     /**------------------------------ GENERALES ------------------------------**/
     
-    // Obtiene metas del comercio
-	public function getGoalCommerce($idCommerce){
-        $this->db->from('xref_goal_commerce');
-        $this->db->where('idCommerce', $idCommerce);
-        return  $this->db->get()->result();
-	}
-    
-    // Obtiene metas de la sucursal
-	public function getGoalBranch($idBranch){
+    // Obtiene metas de la sucursales
+	public function getGoals($idBranch){
+        $this->db->select('sum(weekNewUser) as weekNewUser, sum(weekPoints) as weekPoints');
+        $this->db->select('sum(weekRedem) as weekRedem, sum(monthNewUser) as monthNewUser');
+        $this->db->select('sum(monthPoints) as monthPoints, sum(monthRedem) as monthRedem');
         $this->db->from('xref_goal_branch');
-        $this->db->where('idBranch', $idBranch);
+        $this->db->where('idBranch in ('.$idBranch.')');
         return  $this->db->get()->result();
 	}
 
@@ -280,6 +180,15 @@ Class Monitor_db extends CI_MODEL
         $this->db->select('id, name');
         $this->db->from('branch');
         $this->db->where('idCommerce', $id);
+        return  $this->db->get()->result();
+	}
+    
+    // Obtiene las sucursales del comercio
+	public function getCommerceBranchs($id){
+        $this->db->select("GROUP_CONCAT(id SEPARATOR ', ') as idBranch", false);
+        $this->db->from('branch');
+        $this->db->where('idCommerce', $id);        
+        $this->db->where('status = true');
         return  $this->db->get()->result();
 	}
     
